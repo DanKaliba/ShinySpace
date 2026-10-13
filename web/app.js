@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261013e').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261013f').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -820,7 +820,7 @@ function init(D) {
       { xl: 'relativní změna na magistrát (%)', yl: 'relativní změna listiny v MČ (%)', series: [{ key: 'MČ', color: css('--gray-mark') }, { key: 'P5', color: css('--s8') }], fit: false });
     table($('#tb-d-mc'), [
       { k: 'nazev', label: 'MČ' }, { k: 'mc', label: 'MČ 2022 → 2026', n: 1, f: (r) => `${pct(r.mc_2022)} → ${pct(r.mc_2026)}` },
-      { k: 'rel_mc', label: 'Rel. změna', n: 1, f: (r) => pr(r.rel_mc) }, { k: 'rezidual', label: 'Proti očekávání', n: 1, f: (r) => `<span class="${sgnCls(r.rezidual)}">${pp(r.rezidual)}</span>` },
+      { k: 'rel_mc', label: 'Změna v MČ', n: 1, f: (r) => pr(r.rel_mc) }, { k: 'rel_mag', label: 'Změna na magistrátu', n: 1, f: (r) => pr(r.rel_mag) }, { k: 'ocekavano', label: 'Očekávaná změna v MČ', n: 1, title: 'podle propadu na magistrátu v téže MČ', f: (r) => pr(r.ocekavano) }, { k: 'rezidual', label: 'Lépe / hůř než očekávání', n: 1, f: (r) => `<span class="${sgnCls(r.rezidual)}">${pp(r.rezidual)}</span>` },
     ], [...SM.mc].sort((a, b) => b.rel_mc - a.rel_mc), { rowClass: (r) => (r.p5 ? 'hl' : '') });
 
     const MC = DP.monte_carlo, pd4 = (d) => Object.entries(d).filter(([k]) => +k >= 4).reduce((a, [, v]) => a + v, 0);

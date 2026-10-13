@@ -13,6 +13,9 @@ import sys, os, json, re
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from jsonio import save  # noqa: E402
+
 DL, OUT = sys.argv[1:3]
 C = os.path.join(DL, 'census')
 rng = np.random.default_rng(2026)
@@ -181,8 +184,9 @@ w = M.obyv
 mc_kor = []
 for a, al in [('vs', 'vysokoškoláci (25+)'), ('vek', 'průměrný věk'), ('v65', 'podíl 65+'), ('v0_14', 'podíl 0–14'), ('zahr', 'narození v zahraničí')]:
     for b, bl in [('mag_2026', 'Piráti magistrát 2026'), ('mag_2022', 'Piráti magistrát 2022'), ('mag_zmena', 'změna 2022→26'), ('ps25', 'Piráti PS 2025')]:
-        r, p = perm_p(M[a], M[b])
-        mc_kor.append(dict(demo=a, demo_label=al, vysledek=b, vysledek_label=bl, r=round(float(r), 2), p=round(float(p), 4), n=len(M)))
+        s = M[[a, b]].dropna()
+        r, p = perm_p(s[a], s[b])
+        mc_kor.append(dict(demo=a, demo_label=al, vysledek=b, vysledek_label=bl, r=round(float(r), 2), p=round(float(p), 4), n=len(s)))
 # relativní ztráta podle vzdělání (tercily MČ váženo obyvateli)
 M['tercil_vs'] = pd.qcut(M.vs, 3, labels=['nejméně VŠ', 'střed', 'nejvíc VŠ'])
 terc = [dict(skupina=str(k), mc=int(len(g)), vs=round(float(np.average(g.vs, weights=g.obyv)), 1), mag_2022=round(float(np.average(g.mag_2022, weights=g.obyv)), 2),
@@ -193,7 +197,7 @@ out = dict(kontrola=check, korelace_okrsky=kor, fdr_vyznamnych=int(kmax), regres
            p5_sldb=dict(obyv=int(zuj['gis131620000']), vs=round(zuj['gis141190014'], 1), v65=round(zuj['gis141190005'], 1), v0_14=round(zuj['gis141190003'], 1),
                         vek=round(zuj['gis124070001'], 1)))
 data['census'] = out
-json.dump(data, open(os.path.join(OUT, 'data.json'), 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
+save(data, os.path.join(OUT, 'data.json'))
 pd.DataFrame(okr_cen).to_csv(os.path.join(OUT, 'okrsky_demografie_sldb2021.csv'), index=False, encoding='utf-8-sig', sep=';', decimal=',')
 print(json.dumps(check, ensure_ascii=False))
 print('FDR', kmax); print(pd.DataFrame(kor).pivot(index='demo_label', columns='vysledek_label', values='r').to_string())

@@ -11,6 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ei import fit, bootstrap  # noqa: E402
+from jsonio import save  # noqa: E402
 
 DL, OUT = sys.argv[1:3]
 P5, MAG = 500143, 554782
@@ -205,6 +206,6 @@ for d_ in dom:
     O[d_['okrsek']]['domov_seniory'] = d_['nazev'] or d_['adresa']
 
 data['rozsireni'] = out
-json.dump(data, open(os.path.join(OUT, 'data.json'), 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
+save(data, os.path.join(OUT, 'data.json'))
 print(json.dumps({k: v for k, v in out.items() if k not in ('sankey_praha', 'sankey_p5')}, ensure_ascii=False, indent=1)[:6000])
 print('Praha okrsků', len(keys), 'piráti kam', out['sankey_praha']['pirati_kam'])

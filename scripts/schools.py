@@ -6,6 +6,9 @@ import sys, os, re, json, html
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from jsonio import save  # noqa: E402
+
 DL, OUT = sys.argv[1:3]
 WB = os.path.join(DL, 'zapis', 'wb')
 SP = os.path.join(DL, 'spad')
@@ -100,9 +103,6 @@ def okrsek_of(lng, lat):
 
 
 # klíč obvodu: sdílené obvody (stejná množina adres) sloučit
-def short(n):
-    m = re.search(r'Praha 5 ?- ?\w+,? ([^,]+?)(?: \d|,|$)', n)
-    return n
 obvody = {}
 for i, pts in enumerate(addr):
     key = frozenset(p['address'] for p in pts)
@@ -174,8 +174,7 @@ for o in okr.values():
     o['zs_obvody'] = [dict(obvod=j, podil=round(v / tot, 3)) for j, v in parts] if tot else []
     real = [(j, v) for j, v in parts if ob_out[j]['spadove'] > 0]
     rt = sum(v for _, v in real)
-    def w(key, src=None):
-        vals = [((src or ob_out[j]).get(key) if src is None else None, v) for j, v in real]
+    def w(key):
         vals = [(ob_out[j].get(key), v) for j, v in real if ob_out[j].get(key) is not None]
         s = sum(v for _, v in vals)
         return round(sum(x * v for x, v in vals) / s, 2) if s else None
@@ -283,15 +282,13 @@ for a in ('ms_uspesnost', 'zs_uspesnost'):
         st[f'ctvrti:{a}~{b}'] = round(float(s[a].corr(s[b])), 3)
 data['skoly'] = dict(zs_obvody=ob_out, ms=ms_out, souhrn={k: v['souhrn'] for k, v in skoly.items()}, stats=st,
                      zs_2026_vse=skoly['zs_2026']['skoly'], zs_2025_vse=skoly['zs_2025']['skoly'])
-json.dump(data, open(os.path.join(OUT, 'data.json'), 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
+save(data, os.path.join(OUT, 'data.json'))
 for ob in ob_out:
     print(ob['nazev'][:40], ob['mista'], ob['spadove'], ob['zadosti'], ob['prijato'], ob['neprijato'], ob['uspesnost'], ob['mista_na_spadove'], (ob['r2025'] or {}).get('uspesnost'))
 print(json.dumps(st, ensure_ascii=False))
 print(df.groupby('zs_skola').okrsek.apply(list).to_string())
 
 # CSV pro Excel: okrsky (+ spádová ZŠ) a školy
-flat = pd.DataFrame(data['okrsky']).drop(columns=['strany_2026', 'senat', 'zs_obvody'])
-flat.to_csv(os.path.join(OUT, 'okrsky_praha5.csv'), index=False, encoding='utf-8-sig', sep=';', decimal=',')
 zs = pd.DataFrame([{k: v for k, v in o.items() if k not in ('r2025', 'pozice', 'skoly')} | {'uspesnost_2025': (o['r2025'] or {}).get('uspesnost')} for o in ob_out])
 zs.to_csv(os.path.join(OUT, 'zapisy_zs_2026.csv'), index=False, encoding='utf-8-sig', sep=';', decimal=',')
 pd.DataFrame(ms_out).to_csv(os.path.join(OUT, 'zapisy_ms_2026.csv'), index=False, encoding='utf-8-sig', sep=';', decimal=',')

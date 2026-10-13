@@ -19,6 +19,8 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ei import fit, bootstrap  # noqa: E402
+from jsonio import save  # noqa: E402
+from kvdata import Data, composition, stable, MC22, MC26, PSB  # noqa: E402
 
 DL, OUT = sys.argv[1:3]
 P5, MAG, SEATS = 500143, 554782, 41
@@ -27,10 +29,6 @@ data = json.load(open(os.path.join(OUT, 'data.json'), encoding='utf8'))
 O = {o['okrsek']: o for o in data['okrsky']}
 ids = sorted(O)
 out = {}
-
-
-def rd(p, **kw):
-    return pd.read_csv(os.path.join(DL, p), low_memory=False, **kw)
 
 
 def ci(boot, i, j):
@@ -43,62 +41,10 @@ def wavg(v, w):
     return float((v[m] * w[m]).sum() / w[m].sum())
 
 
-# ---------------------------------------------------------------- načtení KV a PS
-def kv(y):
-    if y == 2026:
-        t3, hl, ros = rd('KV2026_data_20261011_csv/csv_od/kvt3.csv'), rd('KV2026_data_20261011_csv/csv_od/kvhl.csv'), rd('KV2026reg20261011_csv/csv_od/kvros.csv')
-    else:
-        t3, hl, ros = rd('KV2022_data_20260328_csv/csv_od/kvt3.csv'), rd('KV2022_data_20260328_csv/csv_od/kvhl.csv'), rd('KV2022reg20260328_csv/csv_od/kvros.csv')
-        t3, hl, ros = (d[d.DATUMVOLEB == 20220923] for d in (t3, hl, ros))
-    t3 = t3[t3.OKRES == 1100]
-    return t3, hl[hl.ID_OKRSKY.isin(set(t3.ID_OKRSKY))], ros[ros.OKRES == 1100]
-
-
-KV = {y: kv(y) for y in (2022, 2026)}
-
-
-def bloc_votes(y, kod, blocs, obec=None):
-    """Hlasy bloků a voliči/obálky po okrscích (index OBEC, OKRSEK) pro zastupitelstvo `kod`."""
-    t3, hl, ros = KV[y]
-    t = t3[t3.KODZASTUP == kod]
-    if obec:
-        t = t[t.OBEC == obec]
-    h = hl[hl.ID_OKRSKY.isin(set(t.ID_OKRSKY))].drop(columns=['OBEC', 'OKRSEK'], errors='ignore').merge(t[['ID_OKRSKY', 'OBEC', 'OKRSEK']], on='ID_OKRSKY')
-    names = ros[ros.KODZASTUP == kod].set_index('POR_STR_HL').ZKRATKAO30
-    h = h.assign(blok=h.POR_STR_HL.map(lambda p: next(b for b, rx in blocs if re.search(rx, names[p]))))
-    v = h.pivot_table(index=['OBEC', 'OKRSEK'], columns='blok', values='POC_HLASU', aggfunc='sum', fill_value=0)
-    v = v.reindex(columns=[b for b, _ in blocs], fill_value=0)
-    tt = t.groupby(['OBEC', 'OKRSEK'])[['VOL_SEZNAM', 'ODEVZ_OBAL']].sum()
-    return v, tt
-
-
-def ps_votes(blocs, obec=None):
-    t = rd('PS2025data20251005_csv/csv_od/pst4.csv')
-    p = rd('PS2025data20251005_csv/csv_od/pst4p.csv')
-    k = rd('PS2025reg20251005_csv/csv_od/psrkl.csv').set_index('KSTRANA').ZKRATKAK30
-    t, p = t[t.OKRES == 1100], p[p.OKRES == 1100]
-    if obec:
-        t, p = t[t.OBEC == obec], p[p.OBEC == obec]
-    p = p.assign(blok=p.KSTRANA.map(lambda s: next(b for b, rx in blocs if re.search(rx, str(k.get(s, ''))))))
-    v = p.pivot_table(index=['OBEC', 'OKRSEK'], columns='blok', values='POC_HLASU', aggfunc='sum', fill_value=0).reindex(columns=[b for b, _ in blocs], fill_value=0)
-    tt = t.groupby(['OBEC', 'OKRSEK'])[['VOL_SEZNAM', 'ODEVZ_OBAL']].sum()
-    return v, tt
-
-
-def composition(v, tt, keys):
-    """Podíly kategorií na zapsaných voličích: bloky (přepočtené na voliče) + nevoliči."""
-    sh = v.loc[keys].div(v.loc[keys].sum(1), axis=0)
-    X = sh.mul(tt.ODEVZ_OBAL.loc[keys], axis=0)
-    X['Nevoliči'] = tt.VOL_SEZNAM.loc[keys] - tt.ODEVZ_OBAL.loc[keys]
-    return X.div(tt.VOL_SEZNAM.loc[keys], axis=0)
-
-
-def stable(t_a, t_b, lo=0.8, hi=1.25, minreg=150):
-    keys = t_a.index.intersection(t_b.index)
-    r = t_b.VOL_SEZNAM.reindex(keys) / t_a.VOL_SEZNAM.reindex(keys)
-    ua = t_a.ODEVZ_OBAL.reindex(keys) / t_a.VOL_SEZNAM.reindex(keys)
-    ub = t_b.ODEVZ_OBAL.reindex(keys) / t_b.VOL_SEZNAM.reindex(keys)
-    return keys[(r > lo) & (r < hi) & (t_a.VOL_SEZNAM.reindex(keys) >= minreg) & (ua > 0.15) & (ub > 0.10)]
+# ---------------------------------------------------------------- načtení KV a PS (sdílené v kvdata.py)
+D = Data(DL)
+KV = {y: D.kv(y) for y in (2022, 2026)}
+bloc_votes, ps_votes = D.bloc_votes, D.ps_votes
 
 
 def ei_summary(Xa, Yb, w, focus, nboot):
@@ -113,12 +59,6 @@ def ei_summary(Xa, Yb, w, focus, nboot):
 
 
 MB = [('Piráti', r'^Česká pirátská'), ('SPOLU', r'^SPOLU'), ('STAN', r'^STAROSTOVÉ'), ('PRAHA SOBĚ', r'^PRAHA SOBĚ'), ('ANO', r'^ANO'), ('SEN', r'^SEN '), ('Ostatní', r'.')]
-MC26 = [('Piráti', r'^Česká pirátská'), ('PRAHA 5 SOBĚ', r'^PRAHA 5 SOBĚ'), ('ODS, TOP 09, KDU', r'^Občanská demokratická|^TOP Lidovci'), ('STAN', r'^STAROSTOVÉ'),
-        ('SEN', r'^SEN '), ('ANO', r'^ANO'), ('Ostatní', r'.')]
-MC22 = [('Piráti', r'^Česká pirátská'), ('PRAHA 5 SOBĚ', r'^PRAHA 5 SOBĚ'), ('ODS, TOP 09, KDU', r'^SPOLEČNĚ PRO PRAHU 5|^KDU-ČSL, Zelení'), ('STAN', r'^STAROSTOVÉ'),
-        ('SEN', r'SEN 21'), ('ANO', r'^ANO'), ('Ostatní', r'.')]
-PSB = [('Piráti', r'pirátská'), ('SPOLU', r'^SPOLU'), ('STAN', r'^STAROSTOVÉ'), ('ANO', r'^ANO'), ('SPD', r'SPD'), ('Motoristé', r'^Motoristé'), ('Ostatní', r'.')]
-
 # ---------------------------------------------------------------- a) Demografie 2026
 def oby(y):
     a = pd.read_csv(os.path.join(DL, 'csu', f'oby02e_{y}.csv'), dtype=str)
@@ -191,7 +131,7 @@ print('b)', pir_mag_kam[:4])
 
 # ---------------------------------------------------------------- c) preferenční hlasy magistrátní kandidátky Pirátů po čtvrtích Prahy 5
 t3, hl, ros = KV[2026]
-rk = rd('KV2026reg20261011_csv/csv_od/kvrk.csv')
+rk = D.rd('KV2026reg20261011_csv/csv_od/kvrk.csv')
 por = int(ros[(ros.KODZASTUP == MAG) & ros.ZKRATKAO30.str.startswith('Česká pirátská')].POR_STR_HL.iloc[0])
 tP = t3[(t3.KODZASTUP == MAG) & (t3.OBEC == P5)][['ID_OKRSKY', 'OKRSEK']]
 hP = hl[(hl.POR_STR_HL == por)].drop(columns=['OKRSEK'], errors='ignore').merge(tP, on='ID_OKRSKY')
@@ -278,7 +218,6 @@ v26m, t26m = vma, tma
 kk = t22m.index.intersection(t26m.index)
 gr = (t26m.VOL_SEZNAM.loc[kk] / t22m.VOL_SEZNAM.loc[kk] - 1) * 100
 newp = kk[(gr > 15) & (gr < 100)]
-pir_sh = v26m['Piráti'] / v26m.sum(1) * 100
 out['vystavba'] = dict(
     p5_top=grp(top), p5_ostatni=grp(rest),
     p5_okrsky=[dict(okrsek=int(o), ctvrt=rows.ctvrt[o], rust_volicu=round(float(rows.rust_volicu[o]), 1), pirati_2026=float(rows.mc_2026[o]), pirati_zmena=float(rows.mc_delta[o]),
@@ -391,5 +330,5 @@ out['srovnani_mc'] = dict(
 print('i)', out['srovnani_mc']['p5'], out['srovnani_mc']['model'])
 
 data['doplneni'] = out
-json.dump(data, open(os.path.join(OUT, 'data.json'), 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
+save(data, os.path.join(OUT, 'data.json'))
 print('OK')

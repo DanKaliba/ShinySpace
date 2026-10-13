@@ -46,8 +46,22 @@ function hover(node, html) {
   node.addEventListener('mouseleave', hideTip);
 }
 
+/* Tabulková alternativa ke grafu (přístupnost, kopírování čísel) */
+function tableToggle(container, headers, rows) {
+  const d = document.createElement('details');
+  d.className = 'tbl';
+  d.innerHTML = `<summary>Zobrazit jako tabulku</summary><div class="tablewrap"><table class="data"><thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  container.appendChild(d);
+}
+const stripHtml = (s) => String(s ?? '').replace(/<br\s*\/?>/g, ' · ').replace(/<[^>]+>/g, '');
+
 /* Dumbbell: rows [{label, a, b, hi, extra}] – a = dřívější, b = pozdější. */
-function dumbbell(container, rows, { la = '2022', lb = '2026', max, extraLabel } = {}) {
+function dumbbell(container, rows, opts = {}) {
+  dumbbellSvg(container, rows, opts);
+  const { la = '2022', lb = '2026', extraLabel } = opts;
+  tableToggle(container, ['', la, lb, ...(extraLabel ? [extraLabel] : [])], rows.map((r) => [r.label, pct(r.a), pct(r.b), ...(extraLabel ? [r.extra ?? ''] : [])]));
+}
+function dumbbellSvg(container, rows, { la = '2022', lb = '2026', max, extraLabel } = {}) {
   const W = 560, rowH = 30, L = 170, R = extraLabel ? 70 : 24, T = 26;
   const H = T + rows.length * rowH + 22;
   const s = svgRoot(container, W, H);
@@ -86,7 +100,11 @@ function dumbbell(container, rows, { la = '2022', lb = '2026', max, extraLabel }
 }
 
 /* Horizontální sloupce: rows [{label, v, hi, note}] */
-function bars(container, rows, { max, unit = ' %', d = 1 } = {}) {
+function bars(container, rows, opts = {}) {
+  barsSvg(container, rows, opts);
+  if (!opts.noTable) tableToggle(container, ['', 'hodnota'], rows.map((r) => [r.label, nf(r.v, opts.d ?? 1) + (opts.unit ?? ' %')]));
+}
+function barsSvg(container, rows, { max, unit = ' %', d = 1 } = {}) {
   const W = Math.max(280, Math.min(560, container.clientWidth || 560)), rowH = W < 400 ? 22 : 30, L = Math.min(200, Math.round(W * 0.42)), R = 56, T = 6;
   const H = T + rows.length * rowH + 6;
   const s = svgRoot(container, W, H);
@@ -106,7 +124,11 @@ function bars(container, rows, { max, unit = ' %', d = 1 } = {}) {
 }
 
 /* Bodový graf: points [{x, y, label, series}] */
-function scatter(container, pts, { xl, yl, series, zeroY = false, zeroX = false, fit = false } = {}) {
+function scatter(container, pts, opts = {}) {
+  scatterSvg(container, pts, opts);
+  tableToggle(container, ['bod', opts.xl, opts.yl], pts.map((p) => [stripHtml(p.tip || p.label), nf(p.x, 2), nf(p.y, 2)]));
+}
+function scatterSvg(container, pts, { xl, yl, series, zeroY = false, zeroX = false, fit = false } = {}) {
   const W = 560, H = 380, L = 48, R = 16, T = 16, B = 44;
   const s = svgRoot(container, W, H);
   const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
@@ -269,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261013c').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -277,20 +299,12 @@ function init(D) {
   const P = D.p5, O = D.okrsky, S = D.stats, RZ = D.rozsireni || {};
   const byO = Object.fromEntries(O.map((o) => [o.okrsek, o]));
   const pub = D.akce.filter((a) => a.typ !== 'Interní' && a.datum >= '2026-01-01');
-  const kamp = pub.filter((a) => a.datum >= '2026-09-01');
-  const down = O.filter((o) => o.mc_delta < 0).length;
-  const mcDown = D.mc.filter((m) => m.mag_2026 < m.mag_2022).length;
-  const relMc = (P.mc_2026 / P.mc_2022 - 1) * 100, relMag = (P.mag_2026 / P.mag_2022 - 1) * 100;
   const p26 = D.p5_parties['2026'], p22 = D.p5_parties['2022'];
   const find = (arr, rx) => arr.find((p) => rx.test(p.nazev));
-  const stan22 = find(p22, /^STAROSTOVÉ/), stan26 = find(p26, /^STAROSTOVÉ/), sen22 = find(p22, /SEN/), sen26 = find(p26, /SEN/);
-  const magStan = (y) => D.mag_parties[y].find((p) => /^STAROSTOVÉ/.test(p.nazev));
-  const ups = O.filter((o) => o.mc_delta > 0).sort((a, b) => b.mc_delta - a.mc_delta);
-  const worst = [...O].sort((a, b) => a.mc_delta - b.mc_delta).slice(0, 3);
+  const sen22 = find(p22, /SEN/), sen26 = find(p26, /SEN/);
   const C = Object.fromEntries(D.ctvrti.map((c) => [c.ctvrt, c]));
   const kryl = D.p5_kandidati.find((k) => /Kryl/.test(k.jmeno));
   const mandK = D.p5_kandidati.filter((k) => k.mandat);
-  const lask = D.senat.kandidati.find((k) => /Láska/.test(k.jmeno)), sab = D.senat.kandidati.find((k) => /Sáblík/.test(k.jmeno));
 
   /* tiles */
   const tile = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
@@ -358,8 +372,8 @@ function init(D) {
     { k: 'ps_2025', label: 'Piráti sněmovna 2025', br: [15, 18, 21, 24, 27], ramp: BLUE },
     { k: 'sen_2026', label: 'SEN 2026', br: [5, 10, 15, 20, 25], ramp: ORANGE },
     { k: 'stan_2026', label: 'STAN 2026', br: [10, 13, 16, 19, 22], ramp: ORANGE },
-    { k: 'laska', label: 'Láska (senát)', br: [20, 25, 30, 35, 40], ramp: ORANGE, get: (o) => o.senat['3'] },
-    { k: 'senat_sarapatka', label: 'Šarapatka (senát)', br: [12, 16, 20, 24, 28], ramp: ORANGE, get: (o) => o.senat['2'] },
+    { k: 'laska', label: 'Láska (senát)', br: [20, 25, 30, 35, 40], ramp: ORANGE, get: (o) => o.senat_laska },
+    { k: 'senat_sarapatka', label: 'Šarapatka (senát)', br: [12, 16, 20, 24, 28], ramp: ORANGE, get: (o) => o.senat_sarapatka },
     { k: 'ucast_2026', label: 'Účast 2026', br: [35, 42, 48, 54, 60], ramp: BLUE },
     { k: 'zs_uspesnost', label: 'Spádová ZŠ: úspěšnost', br: [65, 75, 85, 92, 98], ramp: BLUE },
     { k: 'cen_0_14', label: 'Děti 0–14 (SLDB)', br: [12, 14, 16, 18, 20], ramp: BLUE },
@@ -442,7 +456,7 @@ function init(D) {
         <dt>Účast 2022</dt><dd>${pct(o.ucast_2022)}</dd>
         <dt>SEN 2022 → 2026</dt><dd>${pct(o.sen_2022)} → ${pct(o.sen_2026)}</dd>
         <dt>STAN 2022 → 2026</dt><dd>${pct(o.stan_2022)} → ${pct(o.stan_2026)}</dd>
-        <dt>Senát: Láska / Sáblík</dt><dd>${pct(o.senat['3'])} / ${pct(o.senat['6'])}</dd>
+        <dt>Senát: Láska / Sáblík</dt><dd>${pct(o.senat_laska)} / ${pct(o.senat_sablik)}</dd>
         <dt>Akcí do 700 m (celkem / kampaň)</dt><dd>${o.akci_do_700m} / ${o.akci_kampan_do_700m}</dd>
         <dt>Volatilita (Pedersen)</dt><dd>${nf(o.pedersen)}</dd>
         <dt>Efektivní počet stran 2022 → 2026</dt><dd>${nf(o.enp_2022)} → ${nf(o.enp_2026)}</dd>
@@ -451,8 +465,9 @@ function init(D) {
         <dt>Spádová ZŠ</dt><dd>${esc(o.zs_skola || '–')}</dd>
         <dt>Úspěšnost žádostí 2026 (2025)</dt><dd>${pct(o.zs_uspesnost, 0)} (${pct(o.zs_uspesnost_2025, 0)})</dd>
       </dl>
+      <p class="sub"><a href="https://volby.gov.cz/app/kv2026/cs/20261009/results/!__0_1100_1100_500143___${o.okrsek}" target="_blank" rel="noopener">Výsledky okrsku na volby.gov.cz</a> · <a href="https://volby.gov.cz/appdata/kv2026/20261009/vysled/okrsek/1100/500143_${o.okrsek}.json" target="_blank" rel="noopener">data</a></p>
       <p class="sub"><b>Strany 2026 v okrsku</b></p><div id="okr-bars"></div>`;
-    bars($('#okr-bars'), top.map(([k, v]) => ({ label: k.length > 26 ? k.slice(0, 25) + '…' : k, v, hi: /pirátská/i.test(k) })), { max: Math.max(30, top[0][1]) });
+    bars($('#okr-bars'), top.map(([k, v]) => ({ label: k.length > 26 ? k.slice(0, 25) + '…' : k, v, hi: /pirátská/i.test(k) })), { max: Math.max(30, top[0][1]), noTable: true });
   }
 
   // tabulka okrsků
@@ -471,13 +486,22 @@ function init(D) {
     { k: 'ps_2025', label: 'PS 2025', n: 1, f: (r) => pct(r.ps_2025) },
     { k: 'sen_2026', label: 'SEN', n: 1, f: (r) => pct(r.sen_2026) },
     { k: 'stan_2026', label: 'STAN', n: 1, f: (r) => pct(r.stan_2026) },
-    { k: 'laska', label: 'Láska', n: 1, sv: (r) => r.senat['3'], f: (r) => pct(r.senat['3']) },
+    { k: 'senat_laska', label: 'Láska', n: 1, f: (r) => pct(r.senat_laska) },
     { k: 'vitez_2026', label: 'Vítěz MČ', f: (r) => esc(r.vitez_2026.slice(0, 22)) },
     { k: 'akci_kampan_do_700m', label: 'Akce', n: 1, title: 'akcí v kampani (září–říjen) do 700 m', f: (r) => r.akci_kampan_do_700m },
     { k: 'zs_skola', label: 'Spádová ZŠ', f: (r) => esc(r.zs_skola || '–') },
     { k: 'zs_uspesnost', label: 'ZŠ úspěšnost', n: 1, title: 'úspěšnost žádostí u zápisu 2026 na spádové ZŠ', f: (r) => pct(r.zs_uspesnost, 0) },
   ], O, { sort: 'okrsek', desc: false, onRow: (r) => { select(r.okrsek, true); $('#map-p5').scrollIntoView({ behavior: 'smooth', block: 'center' }); } });
   $('#f-ctvrt').addEventListener('change', (e) => okrT.set(e.target.value ? O.filter((o) => o.ctvrt === e.target.value) : O));
+  const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  $('#f-ulice').addEventListener('input', (e) => {
+    const q = norm(e.target.value.trim());
+    if (q.length < 3) { $('#f-ulice-out').innerHTML = ''; okrT.set(O); return; }
+    const hit = O.filter((o) => (o.ulice || []).some((u) => norm(u).includes(q)) || norm(o.mistnost + ' ' + o.adresa).includes(q));
+    okrT.set(hit);
+    $('#f-ulice-out').innerHTML = hit.length ? `nalezeno: ${hit.map((o) => `<a href="#map-p5" data-o="${o.okrsek}">${o.okrsek}</a>`).join(', ')}` : 'nic nenalezeno';
+    $('#f-ulice-out').querySelectorAll('a').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); select(+a.dataset.o, true); $('#map-p5').scrollIntoView({ behavior: 'smooth', block: 'center' }); }));
+  });
 
   /* Čtvrti */
   const ctRows = [...D.ctvrti].sort((a, b) => b.mc_2026 - a.mc_2026);
@@ -587,8 +611,8 @@ function init(D) {
     tile2('Prostorové shlukování změny', `I = ${nf(PS.moran['piráti_zmena'][0], 2)}`, `Moranovo I, p = ${nf(PS.moran['piráti_zmena'][1], 2)} – změna je prostorově náhodná`);
   const top = PS.ei.pirati_2022_kam.filter((r) => r.kam !== 'Piráti').slice(0, 3);
   const keep = PS.ei.pirati_2022_kam.find((r) => r.kam === 'Piráti'), keepV = PS.ei.jen_volici_pirati_2022_kam.find((r) => r.kam === 'Piráti');
-  $('#pse-text').innerHTML = `<p><b>Mandáty:</b> přepočet D'Hondtovou metodou s 5% klauzulí přesně odpovídá oficiálnímu výsledku${PS.dhondt_shoda ? '' : ' (POZOR: neodpovídá)'}. Pirátům chybělo na 4. mandát ${int(M.chybelo_na_4_mandat_hlasu)} hlasů, tedy asi ${M.chybelo_na_4_mandat_volicu} voličů, kteří by dali všech 41 hlasů Pirátům. Poslední, 41. mandát připadl SENu jako jeho 6. mandát. Na udržení 6 mandátů z roku 2022 by bylo potřeba ještě zhruba ${int(M.na_6_mandatu_volicu)} voličů. Třetí mandát měli Piráti jistý s rezervou asi ${int(M.rezerva_3_mandatu_volicu)} voličů.</p>
-    <p><b>Plošný, nebo poměrný pokles?</b> Poměrný model (každý okrsek ztratil stejný podíl, ${nf((1 - PS.swing.pomer) * 100, 0)} %) sedí lépe než plošný (všude stejně procentních bodů): chyba ${nf(PS.swing.rmse_pomerny, 2)} proti ${nf(PS.swing.rmse_plosny, 2)} p. b. Piráti ztratili nejvíc tam, kde měli nejvíc. Změna se prostorově neshlukuje (Moranovo I = ${nf(PS.moran['piráti_zmena'][0], 2)}, p = ${nf(PS.moran['piráti_zmena'][1], 2)}), zatímco SEN je silně soustředěný (I = ${nf(PS.moran.sen_2026[0], 2)}). Z 81 lokálních testů (LISA) nezůstal po korekci na vícenásobné testování (FDR) žádný významný shluk.</p>
+  $('#pse-text').innerHTML = `<p><b>Mandáty:</b> přepočet D'Hondtovou metodou (klauzule: ${esc(PS.klauzule)}) přesně odpovídá oficiálnímu výsledku${PS.dhondt_shoda ? '' : ' (POZOR: neodpovídá)'}. Pirátům chybělo na další mandát ${int(M.chybelo_na_4_mandat_hlasu)} hlasů, tedy asi ${M.chybelo_na_4_mandat_volicu} voličů, kteří by dali všechny své hlasy Pirátům. Poslední mandát připadl kandidátce ${esc(M.posledni_mandat.replace(/ s podporou[^(]*/, ' '))}. Na udržení 6 mandátů z roku 2022 by bylo potřeba ještě zhruba ${int(M.na_6_mandatu_volicu)} voličů (simulace přepočtu – Piráti by museli vytlačit tři cizí mandáty). Třetí mandát měli Piráti jistý s rezervou asi ${int(M.rezerva_3_mandatu_volicu)} voličů.</p>
+    <p><b>Plošný, nebo poměrný pokles?</b> Poměrný model (každý okrsek ztratil stejný podíl, ${nf((1 - PS.swing.pomer) * 100, 0)} %) sedí lépe než plošný (všude stejně procentních bodů): chyba ${nf(PS.swing.rmse_pomerny, 2)} proti ${nf(PS.swing.rmse_plosny, 2)} p. b. Piráti ztratili nejvíc tam, kde měli nejvíc. Změna se prostorově neshlukuje (Moranovo I = ${nf(PS.moran['piráti_zmena'][0], 2)}, p = ${nf(PS.moran['piráti_zmena'][1], 2)}), zatímco SEN je silně soustředěný (I = ${nf(PS.moran.sen_2026[0], 2)}). Z 81 lokálních testů (LISA) ${PS.lisa_fdr_vyznamnych ? `zůstalo po korekci na vícenásobné testování (FDR) ${PS.lisa_fdr_vyznamnych} významných` : 'nezůstal po korekci na vícenásobné testování (FDR) žádný významný shluk'}.</p>
     <p><b>Kam odešli voliči?</b> Ekologická inference z rozdílů mezi okrsky naznačuje, že Piráti si udrželi jen asi ${nf(keep.pct, 0)}–${nf(keepV.pct, 0)} % svých voličů z roku 2022. Nejvíc odchodů míří k bloku ODS, TOP 09 a KDU (${nf(top[0].pct, 0)} %, interval ${nf(top[0].p05, 0)}–${nf(top[0].p95, 0)} %), dál k ${top.slice(1).map((r) => `${esc(r.kam)} (${nf(r.pct, 0)} %)`).join(' a ')}. Odhad pro STAN je nejistý (0–${nf(PS.ei.pirati_2022_kam.find((r) => r.kam === 'STAN').p95, 0)} %). Model vysvětluje jen ${nf(PS.ei.r2_pirati_2026 * 100, 0)} % rozdílů pirátského výsledku mezi okrsky, takže jde o orientační odhad: intervaly jsou široké a kategorie se překrývají.</p>`;
   const vMap = Object.fromEntries(PS.ei.jen_volici_pirati_2022_kam.map((r) => [r.kam, r]));
   table($('#tb-ei'), [
@@ -709,6 +733,36 @@ function init(D) {
     ], [...new Set(CE.korelace_mc.map((x) => x.demo))].map((d) => ({ demo: d, demo_label: CE.korelace_mc.find((x) => x.demo === d).demo_label })));
   }
 
+  /* Kontrola dat */
+  if (D.forenzni) {
+    const F = D.forenzni, RP = F.reprodukce, PM = F.p5_marze;
+    const tile4 = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+    const cnt = (j) => F.nalezy.filter((n) => n.jistota === j).length;
+    $('#kon-tiles').innerHTML =
+      tile4('Přepočet mandátů', `${RP.shoda} / ${RP.zastupitelstev}`, 'zastupitelstev Prahy (57 MČ + magistrát) sedí na oficiální výsledek') +
+      tile4('Rozhodující marže Prahy 5', `${int(PM.hlasu)} hlasů`, `≈ ${nf(PM.volicu)} plných voličů · ${esc(PM.listina.replace(/ s podporou.*/, ''))} ${esc(PM.zmena)}`) +
+      tile4('Preferenční pravidlo', F.preference_shoda['10'] && !F.preference_shoda['5'] ? '10 %' : '?', '10% hranice sedí na všechny kandidátky, 5% ne') +
+      tile4('Nálezy v okrscích P5', String(F.nalezy.length), `${cnt('vysoká')} vysoká jistota · ${cnt('střední')} střední · ${cnt('informativní')} informativní`);
+    $('#kon-text').innerHTML = `<p>Nezávisle jsme přepočítali mandáty podle zákona (5% klauzule s přepočtem pro neúplné kandidátky, D'Hondt, 10% preferenční pravidlo) a prošli okrsky Prahy 5 testy, které používá audit <a href="https://volebnianalyza.suchan.cz/kv/praha/index.html">volebnianalyza.suchan.cz</a>. Výsledky se shodují: rozhodující marže zastupitelstva Prahy 5 vychází ${int(PM.hlasu)} hlasů (audit: ${PM.suchan}) a našli jsme i tytéž okrsky s chybami (nulové neplatné lístky 5004, 5019, 5067; překlep 5036; chybějící balík lístků STAN v 5019; rozdíl obálek 5081). <b>Žádný nález nemění mandáty</b> – ani v zastupitelstvu Prahy 5, ani na magistrátu (chybějící hlasy STAN v okrsku 5019 jsou řádově 2 000, na změnu mandátu by bylo potřeba přes 44 000). Chyby se týkají hlavně preferenčních hlasů jednotlivých kandidátů.</p>`;
+    const dots = { 'vysoká': '●●●', 'střední': '●●', 'informativní': '●' };
+    table($('#tb-kon-nalezy'), [
+      { k: 'jistota', label: 'Jistota', f: (r) => `<span title="${esc(r.jistota)}">${dots[r.jistota] || ''}</span>` },
+      { k: 'okrsek', label: 'Okrsek', n: 1, f: (r) => `${r.okrsek}<br><span class="muted">${esc(r.ctvrt)}</span>` },
+      { k: 'zastupitelstvo', label: 'Hlasování' }, { k: 'typ', label: 'Nález', cls: 'wrap' }, { k: 'subjekt', label: 'Subjekt', cls: 'wrap' },
+      { k: 'detail', label: 'Detail', cls: 'wrap', f: (r) => `${esc(r.detail)}<br><span class="muted">${esc(r.vliv)}</span>` },
+      { k: 'url', label: 'Ověřit', f: (r) => `<a href="${r.url}" target="_blank" rel="noopener">volby.gov.cz</a><br><a href="${r.json}" target="_blank" rel="noopener">data</a>` },
+    ], F.nalezy);
+    table($('#tb-kon-marze'), [
+      { k: 'nazev', label: 'MČ' }, { k: 'listina', label: 'Kandidátka', cls: 'wrap' }, { k: 'mandaty', label: 'Mandáty', n: 1, f: (r) => `${r.mandaty} z ${r.mandatu_celkem}` },
+      { k: 'chybelo_hlasu', label: 'Chybělo na další', n: 1, sv: (r) => r.chybelo_volicu, f: (r) => `${int(r.chybelo_hlasu)}<br><span class="muted">${nf(r.chybelo_volicu)} plných voličů</span>` },
+      { k: 'rezerva_hlasu', label: 'Rezerva', n: 1, sv: (r) => r.rezerva_volicu, f: (r) => `${int(r.rezerva_hlasu)}<br><span class="muted">${nf(r.rezerva_volicu)} plných voličů</span>` },
+    ], F.marze_pirati, { sort: 'chybelo_hlasu', desc: false, rowClass: (r) => (r.kod === 500143 ? 'hl' : '') });
+    table($('#tb-kon-benford'), [
+      { k: 'z', label: 'Hlasování' }, { k: 'n', label: 'Počet hodnot', n: 1, f: (r) => int(r.n) }, { k: 'chi2', label: 'χ²', n: 1, f: (r) => nf(r.chi2, 1) }, { k: 'p', label: 'p', n: 1, f: (r) => nf(r.p, 3) },
+    ], Object.entries(F.benford).map(([z, v]) => ({ z, ...v })));
+    $('#kon-benford-note').textContent = 'Benfordův test 2. číslice je jen hrubý ukazatel. V MČ (41 hlasů na voliče) data Benfordovu rozdělení odpovídají. Na magistrátu (65 hlasů na voliče) se od něj odchylují, to je ale u vícehlasých lístků očekávané: hlasy stran jsou přibližně násobky počtu lístků, a druhá číslice proto Benfordovo rozdělení mít nemusí. Nejde o známku manipulace; audit suchan.cz proto používá i další testy (Klimek, Kobak, Beber–Scacco), všechny v normě.';
+  }
+
   /* Doplňující analýzy */
   if (D.doplneni) {
     const DP = D.doplneni, DV = DP.demografie_2026;
@@ -767,7 +821,7 @@ function init(D) {
     ], [...SM.mc].sort((a, b) => b.rel_mc - a.rel_mc), { rowClass: (r) => (r.p5 ? 'hl' : '') });
 
     const MC = DP.monte_carlo, pd4 = (d) => Object.entries(d).filter(([k]) => +k >= 4).reduce((a, [, v]) => a + v, 0);
-    $('#d-mandaty-text').innerHTML = `<p>Oficiálně 3 mandáty, na 4. chybělo 825 hlasů. Kdyby se hlasy všech stran náhodně pohnuly o ±1 % (relativně), měli by Piráti 4 a víc mandátů v ${nf(pd4(MC.sum_1_procento.pirati), 0)} % simulací; při ±2 % v ${nf(pd4(MC.sum_2_procenta.pirati), 0)} %. Při náhodném přeskupení okrsků (bootstrap, odpovídá jiné geografické účasti) v ${nf(pd4(MC.bootstrap_okrsku.pirati), 0)} %. Čtvrtý mandát tedy nebyl daleko – rozhodovaly desítky voličů.</p>`;
+    $('#d-mandaty-text').innerHTML = `<p>Oficiálně ${MC.oficialne} mandáty, na další chybělo ${int(D.psefologie.mandaty.chybelo_na_4_mandat_hlasu)} hlasů. Kdyby se hlasy všech stran náhodně pohnuly o ±1 % (relativně), měli by Piráti 4 a víc mandátů v ${nf(pd4(MC.sum_1_procento.pirati), 0)} % simulací; při ±2 % v ${nf(pd4(MC.sum_2_procenta.pirati), 0)} %. Při náhodném přeskupení okrsků (bootstrap, odpovídá jiné geografické účasti) v ${nf(pd4(MC.bootstrap_okrsku.pirati), 0)} %. Další mandát tedy nebyl daleko – rozhodovaly desítky voličů (${D.psefologie.mandaty.chybelo_na_4_mandat_volicu} „plných“).</p>`;
     const simRows = ['sum_1_procento', 'sum_2_procenta', 'bootstrap_okrsku'].flatMap((key) => ['pirati', 'sen'].map((p) => ({ scen: { sum_1_procento: 'šum ±1 %', sum_2_procenta: 'šum ±2 %', bootstrap_okrsku: 'bootstrap okrsků' }[key], p: p === 'pirati' ? 'Piráti' : 'SEN', d: MC[key][p] })));
     const allK = [...new Set(simRows.flatMap((r) => Object.keys(r.d).map(Number)))].sort((a, b) => a - b);
     table($('#tb-d-mc-sim'), [{ k: 'scen', label: 'Scénář' }, { k: 'p', label: 'Strana' }, ...allK.map((kk) => ({ k: 'm' + kk, label: `${kk} mand.`, n: 1, f: (r) => (r.d[kk] ? `${nf(r.d[kk], 0)} %` : '–') }))], simRows);
@@ -797,7 +851,7 @@ function init(D) {
   }
 
   /* Kandidáti */
-  $('#kand-text').innerHTML = `<p>V komunálních volbách většina voličů dává hlas celé listině, takže preferenční hlasy kandidátů se liší jen o desítky až stovky. Přednost před pořadím dostane kandidát, který má aspoň o 5 % víc hlasů, než je průměr na kandidáta listiny (zde ${int(P.mc_hlasy_2026 / D.p5_kandidati.length * 1.05)} hlasů). Mandát získali ${mandK.map((k) => `${esc(k.jmeno)} (${k.poradi}.)`).join(', ')}. ${kryl ? `${esc(kryl.jmeno)}, jednatel Spolku na ochranu Barrandova, přeskočil z 6. místa: na Barrandově dostal o ${nf(kryl.index_ctvrti.Barrandov - 100, 0)} % víc preferencí, než je jeho průměr.` : ''}</p>`;
+  $('#kand-text').innerHTML = `<p>V komunálních volbách většina voličů dává hlas celé listině, takže preferenční hlasy kandidátů se liší jen o desítky až stovky. Přednost před pořadím dostane kandidát, který má aspoň o 10 % víc hlasů, než je průměr na kandidáta listiny (zde ${int(P.mc_hlasy_2026 / D.p5_kandidati.length * 1.1)} hlasů; 10% hranici jsme ověřili přepočtem všech kandidátek Prahy 5). Mandát získali ${mandK.map((k) => `${esc(k.jmeno)} (${k.poradi}.)`).join(', ')}. ${kryl ? `${esc(kryl.jmeno)}, jednatel Spolku na ochranu Barrandova, přeskočil z 6. místa: na Barrandově dostal o ${nf(kryl.index_ctvrti.Barrandov - 100, 0)} % víc preferencí, než je jeho průměr.` : ''}</p>`;
   const CTS = Object.keys(D.p5_kandidati[0].index_ctvrti);
   table($('#tb-kand'), [
     { k: 'poradi', label: '#', n: 1, f: (r) => r.poradi }, { k: 'jmeno', label: 'Kandidát', f: (r) => `${r.mandat ? '<b>' : ''}${esc(r.jmeno)}${r.mandat ? '</b>' : ''}` },

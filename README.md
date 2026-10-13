@@ -11,7 +11,7 @@ srovnání s KV 2022 a PS 2025, SEN a STAN, Senát (obvod 21), kampaňové akce 
 |---|---|---|
 | [`zjisteni/`](zjisteni/) | zjištění a metodika v Markdownu – web je zobrazuje přímo | kdokoli z týmu, ručně |
 | [`data/`](data/) | vygenerovaná data: `data.json` (web), CSV pro Excel, hranice okrsků | skripty |
-| [`scripts/`](scripts/) | stažení zdrojů a výpočet (`download.sh`, `okr.py`, `build.py`, `schools.py`, `psefologie.py`, `rozsireni.py`, `census.py`, `doplneni.py`, `ei_shrink.py`, `kvdata.py`, `ei.py`) | při změně analýzy |
+| [`scripts/`](scripts/) | stažení zdrojů a výpočet (`download.sh`, `okr.py`, `build.py`, `schools.py`, `psefologie.py`, `rozsireni.py`, `census.py`, `doplneni.py`, `ei_shrink.py`, `forenzni.py`, `export_csv.py`, `kvdata.py`, `jsonio.py`, `ei.py`) | při změně analýzy |
 | [`.claude/skills/`](.claude/skills/) | skill `psefologie-okrsky` pro Claude Code: zdroje, nástrahy a metody této analýzy | když se metoda změní |
 | [`web/`](web/) | stránka (HTML, JS, CSS) – čte `../data/` a `../zjisteni/` | při změně vzhledu |
 
@@ -36,6 +36,8 @@ python scripts/rozsireni.py dl data                       # Sankey (P5 + Praha),
 python scripts/census.py dl data                          # demografie ze sčítání 2021: grid → okrsky, vzdělání po MČ
 python scripts/doplneni.py dl data                        # věk 2026, MČ × magistrát, PS 2025 → KV 2026, účast, výstavba, Monte Carlo, srovnání MČ
 python scripts/ei_shrink.py dl data                       # Sankey: test smrštění (křížová validace) a citlivost toků do nevoličů
+python scripts/forenzni.py dl data                        # kontrola dat okrsků P5, přepočet mandátů všech MČ, rozhodující marže
+python scripts/export_csv.py data                         # CSV pro Excel – vždy jako poslední krok
 ```
 
 `volby_source/` = interní podklady (kalendář akcí z Notionu, Okrsky.docx, mapování okrsků na čtvrti) – do repozitáře nepatří

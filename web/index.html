@@ -6,7 +6,7 @@
 <title>Piráti Praha 5 – volby 2026</title>
 <meta name="description" content="Analýza výsledků Pirátů v komunálních volbách 2026 v Praze a na Praze 5 po volebních okrscích, srovnání s rokem 2022 a sněmovními volbami 2025, senát a kampaňové akce.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20261013c">
 </head>
 <body>
 <header class="top" id="top">
@@ -15,7 +15,7 @@
     <h1>Jak dopadli Piráti na Praze 5</h1>
     <p class="lede">Výsledky po všech 81 volebních okrscích Prahy 5: srovnání s komunálními volbami 2022 a sněmovními 2025, konkurence SENu a Starostů, senátní obvod 21 a&nbsp;co ukazují kampaňové akce.</p>
     <nav class="toc" aria-label="Obsah">
-      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#demografie">Demografie</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#doplneni">Doplňky</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
+      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#demografie">Demografie</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#kontrola">Kontrola dat</a><a href="#doplneni">Doplňky</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
     </nav>
   </div>
 </header>
@@ -79,7 +79,9 @@
     </div>
     <figure class="card">
       <figcaption>Všech 81 okrsků <a class="dl" href="../data/okrsky_praha5.csv" download>Stáhnout CSV</a> <a class="dl" href="../data/okrsky_demografie_sldb2021.csv" download>Demografie CSV</a></figcaption>
-      <div class="controls"><label>Čtvrť <select id="f-ctvrt"><option value="">všechny</option></select></label></div>
+      <div class="controls"><label>Čtvrť <select id="f-ctvrt"><option value="">všechny</option></select></label>
+        <label style="margin-left:12px">Najdi okrsek podle ulice <input id="f-ulice" type="search" placeholder="např. Lohniského" style="font:inherit;font-size:14px;padding:4px 8px;border-radius:6px;border:1px solid var(--axis);background:var(--surface);color:var(--ink)"></label>
+        <span id="f-ulice-out" class="small"></span></div>
       <div class="tablewrap tall"><table class="data sortable" id="tb-okr"></table></div>
     </figure>
   </section>
@@ -271,6 +273,23 @@
     </div>
   </section>
 
+  <section id="kontrola">
+    <h2>Kontrola dat a přepočet mandátů</h2>
+    <div id="kon-tiles" class="tiles"></div>
+    <div id="kon-text" class="prose"></div>
+    <figure class="card"><figcaption>Nálezy v okrscích Prahy 5 (KV 2026, MČ i magistrát)</figcaption>
+      <div class="tablewrap tall"><table class="data" id="tb-kon-nalezy"></table></div>
+      <p class="small">Jistota: ●●● vysoká, ●● střední, ● informativní. Statistický nález není důkaz úmyslu; závazné jsou jen výsledky vyhlášené volebními orgány.</p></figure>
+    <div class="grid2">
+      <figure class="card"><figcaption>Pirátské kandidátky ve všech MČ: kolik hlasů chybělo na další mandát a jaká byla rezerva</figcaption>
+        <div class="tablewrap tall"><table class="data sortable" id="tb-kon-marze"></table></div>
+        <p class="small">„Plní voliči“ = hlasy ÷ počet mandátů (volič, který dá kandidátce všechny hlasy). Ostatní strany beze změny.</p></figure>
+      <figure class="card"><figcaption>Benfordův test 2. číslice (hlasy stran v okrscích Prahy 5)</figcaption>
+        <div class="tablewrap"><table class="data" id="tb-kon-benford"></table></div>
+        <p class="small" id="kon-benford-note"></p></figure>
+    </div>
+  </section>
+
   <section id="doplneni">
     <h2>Doplňující analýzy</h2>
     <p class="note">Body z „Co v analýze chybí“, které šlo udělat z veřejných dat. Rychlé odkazy: <a href="#d-vek">věk a pohlaví 2026</a> · <a href="#d-split">MČ × magistrát</a> · <a href="#d-pref">preference na magistrát</a> · <a href="#d-ucast">účast</a> · <a href="#d-vystavba">nová výstavba</a> · <a href="#d-mc">srovnání MČ</a> · <a href="#d-mandaty">Monte Carlo mandátů</a> · <a href="#d-ei">varianty odhadu přesunů</a>. Přesuny ze sněmovních voleb 2025 jsou v <a href="#psefologie">Sankey diagramu</a>.</p>
@@ -331,9 +350,13 @@
   </section>
 </main>
 
+<footer class="wrap small" style="padding:24px 16px 40px;color:var(--ink-2)">
+  Analýza vznikla s pomocí AI (Claude) z otevřených dat ČSÚ a dalších veřejných zdrojů. Může obsahovat chyby – závazné jsou pouze výsledky vyhlášené volebními orgány.
+  Zdrojový kód, data a zjištění: <a href="https://github.com/DanKaliba/ShinySpace">github.com/DanKaliba/ShinySpace</a>.
+</footer>
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=20261013c"></script>
 </body>
 </html>

@@ -7,9 +7,19 @@ from datetime import date
 import pandas as pd
 import numpy as np
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from jsonio import save  # noqa: E402
+
 DL, SRC, OKRJ, OUT = sys.argv[1:5]
 os.makedirs(OUT, exist_ok=True)
 PIR = '720'
+
+
+def i0(x):
+    """int s 0 za chybějící hodnotu (pandas čte prázdné buňky jako NaN, které je pravdivé)."""
+    return int(x) if pd.notna(x) else 0
+
+
 P5 = 500143
 MC_SEATS = 41  # zastupitelstvo MČ Praha 5 (kvrzcoco.MANDATY) = počet hlasů jednoho voliče
 MAG = 554782
@@ -88,7 +98,7 @@ for y in (2022, 2026):
     t = mag_party_table(y)
     mag[y] = t
 out['mag_parties'] = {
-    str(y): [dict(nazev=r.ZKRATKAO30, pct=round(float(r.PROCHLSTR), 2), mandaty=int(r.MAND_STR or 0), hlasy=int(r.HLASY_STR), pir=bool(r.PIR))
+    str(y): [dict(nazev=r.ZKRATKAO30, pct=round(float(r.PROCHLSTR), 2), mandaty=i0(r.MAND_STR), hlasy=int(r.HLASY_STR), pir=bool(r.PIR))
              for r in mag[y].itertuples() if r.PROCHLSTR >= 1]
     for y in mag
 }
@@ -109,7 +119,7 @@ for kod, name in sorted(mc_names.items(), key=lambda x: x[1]):
         if len(r):
             r = r.sort_values('PROCHLSTR', ascending=False).iloc[0]
             row[f'mc_{y}'] = round(float(r.PROCHLSTR), 2)
-            row[f'mc_mand_{y}'] = int(r.MAND_STR or 0)
+            row[f'mc_mand_{y}'] = i0(r.MAND_STR)
             row[f'mc_list_{y}'] = r.ZKRATKAO30
             row[f'mc_samostatne_{y}'] = str(r.SLOZENI) == PIR
     ps = ps_okr.loc[kod] if kod in ps_okr.index.get_level_values(0) else None
@@ -131,7 +141,7 @@ p5p = {}
 for y in (2022, 2026):
     ros = K[y][2]
     r = ros[ros.KODZASTUP == P5].sort_values('PROCHLSTR', ascending=False)
-    p5p[str(y)] = [dict(nazev=x.ZKRATKAO30, vstrana=int(x.VSTRANA), pct=round(float(x.PROCHLSTR), 2), mandaty=int(x.MAND_STR or 0),
+    p5p[str(y)] = [dict(nazev=x.ZKRATKAO30, vstrana=int(x.VSTRANA), pct=round(float(x.PROCHLSTR), 2), mandaty=i0(x.MAND_STR),
                         hlasy=int(x.HLASY_STR), pir=bool(x.PIR)) for x in r.itertuples()]
 out['p5_parties'] = p5p
 
@@ -153,7 +163,8 @@ assert len(okr2ct) == 81, len(okr2ct)
 
 rows = {}
 for o in range(5001, 5082):
-    rows[o] = dict(okrsek=o, ctvrt=okr2ct[o], mistnost=okj[str(o)]['mistnost'], adresa=okj[str(o)]['adresa'].split(',')[0])
+    ulice = sorted({u.strip() for u in re.findall(r'([^\d,;/]+?) \d+[a-z]?/', okj[str(o)]['ulice']) if len(u.strip()) > 2})
+    rows[o] = dict(okrsek=o, ctvrt=okr2ct[o], mistnost=okj[str(o)]['mistnost'], adresa=okj[str(o)]['adresa'].split(',')[0], ulice=ulice)
 
 for y in (2022, 2026):
     t3, hl, ros, rk = K[y]
@@ -230,6 +241,10 @@ for o in rows:
     r = se5.loc[o]
     rows[o]['senat'] = {int(c): round(float(r[f'HLASY_{int(c):02d}'] / r.PL_HL_CELK * 100), 2) for c in c21.CKAND}
     rows[o]['senat_ucast'] = round(float(r.ODEVZ_OBAL / r.VOL_SEZNAM * 100), 2)
+SEN_C = {p: int(c21[c21.PRIJMENI == p].CKAND.iloc[0]) for p in ('Láska', 'Sáblík', 'Šarapatka')}
+for o in rows:
+    for p, key in (('Láska', 'senat_laska'), ('Sáblík', 'senat_sablik'), ('Šarapatka', 'senat_sarapatka')):
+        rows[o][key] = rows[o]['senat'][SEN_C[p]]
 
 # ---------------------------------------------------------------- Kandidáti Pirátů Praha 5 (MČ) – preferenční hlasy
 def cand_table(y, kod):
@@ -253,7 +268,7 @@ for r in c26.itertuples():
     idx = {k: round(float((byct[k] / ct_party[k]) / tot_share * 100), 0) if tot_share > 0 else None for k in byct.index}
     cands.append(dict(poradi=int(r.PORCISLO), jmeno=f'{r.TITULPRED + " " if isinstance(r.TITULPRED, str) and r.TITULPRED else ""}{r.JMENO} {r.PRIJMENI}'.strip(),
                       vek=int(r.VEK), povolani=r.POVOLANI, hlasy=int(r.POCHLASU), pct=float(r.POCPROCVSE), mandat=r.MANDAT == 'A',
-                      poradi_mand=int(r.PORADIMAND) if r.PORADIMAND else 0, poradi_nahr=int(r.PORADINAHR) if r.PORADINAHR else 0,
+                      poradi_mand=i0(r.PORADIMAND), poradi_nahr=i0(r.PORADINAHR),
                       index_ctvrti=idx))
 out['p5_kandidati'] = cands
 out['p5_kandidati_2022'] = [dict(poradi=int(r.PORCISLO), jmeno=f'{r.JMENO} {r.PRIJMENI}', hlasy=int(r.POCHLASU), pct=float(r.POCPROCVSE), mandat=r.MANDAT == 'A')
@@ -265,7 +280,7 @@ hm = hl[(hl.KODZASTUP == MAG) & (hl.POR_STR_HL == pm)]
 hm5 = hm[hm.OBEC == P5]
 out['mag_kandidati'] = [dict(poradi=int(r.PORCISLO), jmeno=f'{r.JMENO} {r.PRIJMENI}', hlasy=int(r.POCHLASU), pct=float(r.POCPROCVSE), mandat=r.MANDAT == 'A',
                              hlasy_p5=int(hm5[f'HLASY_{int(r.PORCISLO):02d}'].sum()),
-                             pct_p5=round(float(hm5[f'HLASY_{int(r.PORCISLO):02d}'].sum() / hm5.POC_HLASU.sum() * 100 * 65 / 65), 2))
+                             pct_p5=round(float(hm5[f'HLASY_{int(r.PORCISLO):02d}'].sum() / hm5.POC_HLASU.sum() * 100), 2))
                         for r in cm.itertuples() if int(r.PORCISLO) <= 30]
 
 # debaty "Na rovinu s …" – index preferencí hostujícího kandidáta magistrátní kandidátky v čtvrti debaty
@@ -337,9 +352,11 @@ for e in events:
     for a, nxt in zip(b, b[1:]):
         if re.match(r'^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]$', a):
             ORGANIZERS.add(nxt)
-# jména bez iniciály (Tomáš Bederka, Filip Karel, Anonymous) – poslední řádek bloku, který není místo ani datum
+# místo se ponechá jen tehdy, když vypadá jako místo (adresa s číslem nebo známé místní slovo);
+# cokoli jiného (typicky jméno organizátora bez iniciály) se zahodí
+PLACE_OK = re.compile(r'\d|Prague|Praha|náměst|nám\.|park|metro|albert|zvon|vinici|louk|sady|centrum|kavalír|klamovk|knížecí|anděl|arbes|škola|chaplin|tilleho|trnkov|walter|laurov|křížov|tenis|filipa|pláni', re.I)
 for e in events:
-    if e['place'] and (e['place'] in ORGANIZERS or e['place'] in ('Tomáš Bederka', 'Filip Karel', 'Anonymous')):
+    if e['place'] and (e['place'] in ORGANIZERS or not PLACE_OK.search(e['place'])):
         e['place'] = None
 
 TODAY = date(2026, 10, 13)  # export kalendáře: "Last Wednesday" = 7. 10. 2026 apod.
@@ -428,11 +445,9 @@ for e in events:
     place = e['place']
     if place:
         place = re.sub(r',? ?\d{3} \d{2} Prague, Czechia$|, Prague, Czechia$', '', place).strip()
-    if typ == 'Interní' or (ct is None and typ != 'Debata'):
-        ct_final = ct
-    else:
-        ct_final = ct
-    ev_out.append(dict(datum=d.isoformat() if d else None, nazev=title, typ=typ, ctvrt=ct_final, misto=place, od=tf, do=tt, hodin=hrs, okrsek=anc,
+    if anc is not None:
+        ct = okr2ct[anc]  # místo je přesnější než název akce (např. „na Hřebenkách“ u Kavalírky)
+    ev_out.append(dict(datum=d.isoformat() if d else None, nazev=title, typ=typ, ctvrt=ct, misto=place, od=tf, do=tt, hodin=hrs, okrsek=anc,
                        volebni_den=bool(d and d in (date(2026, 10, 9), date(2026, 10, 10)))))
 ev_out.sort(key=lambda x: x['datum'] or '')
 ev_out = [e for e in ev_out if e['typ'] != 'Interní']  # interní schůze, školení a fundraising se nepublikují
@@ -442,12 +457,6 @@ out['akce'] = ev_out
 pub = [e for e in ev_out if e['typ'] != 'Interní' and e['datum'] and e['datum'] >= '2026-01-01']
 ct_rows = []
 for c, okl in CT.items():
-    R = [rows[o] for o in okl]
-    def wavg(key, w='odevzdano_2026'):
-        num = sum(r[key] * r[w] for r in R if r.get(key) is not None)
-        den = sum(r[w] for r in R if r.get(key) is not None)
-        return round(num / den, 2) if den else None
-    t3, hl, ros, rk = K[2026]
     def ct_share(y, kod):
         t3, hl, ros, rk = K[y]
         t = t3[(t3.OBEC == P5) & (t3.KODZASTUP == kod) & (t3.OKRSEK.isin(okl))]
@@ -515,7 +524,7 @@ for x in ('akci_do_700m', 'akci_kampan_do_700m', 'vzdalenost_akce_km'):
     for yv in ('mc_delta', 'mag_delta', 'mc_vs_ps', 'ucast_delta'):
         s = df[[x, yv]].dropna()
         stats[f'{x}~{yv}'] = round(float(s[x].corr(s[yv])), 3)
-df['laska'] = [r['senat'][3] for r in out['okrsky']]
+df['laska'] = df.senat_laska
 df['sen_delta'] = df.sen_2026 - df.sen_2022
 df['stan_delta'] = df.stan_2026 - df.stan_2022
 stats['mc_delta~stan_delta'] = round(float(df.mc_delta.corr(df.stan_delta)), 3)
@@ -555,7 +564,7 @@ for y in (2022, 2026):
     summ[f'volici_{y}'] = int(t.VOL_SEZNAM.sum())
     summ[f'odevzdano_{y}'] = int(t.ODEVZ_OBAL.sum())
     r = ros[(ros.KODZASTUP == P5) & (ros.PIR == True)].iloc[0]
-    summ[f'mc_{y}'] = float(r.PROCHLSTR); summ[f'mc_mand_{y}'] = int(r.MAND_STR); summ[f'mc_hlasy_{y}'] = int(r.HLASY_STR)
+    summ[f'mc_{y}'] = float(r.PROCHLSTR); summ[f'mc_mand_{y}'] = i0(r.MAND_STR); summ[f'mc_hlasy_{y}'] = int(r.HLASY_STR)
     summ[f'mc_volici_{y}'] = round(r.HLASY_STR / MC_SEATS)
     tm = t3[(t3.OBEC == P5) & (t3.KODZASTUP == MAG)]
     hm = hl[(hl.OBEC == P5) & (hl.KODZASTUP == MAG) & (hl.PIR == True)]
@@ -567,7 +576,7 @@ summ['ucast_ps_2025'] = round(float(ps5.ODEVZ.sum() / ps5.VOL.sum() * 100), 2)
 out['p5'] = summ
 for y in (2022, 2026):
     r = mag[y][mag[y].PIR == True].iloc[0]
-    out[f'praha_mag_{y}'] = dict(pct=float(r.PROCHLSTR), mandaty=int(r.MAND_STR), hlasy=int(r.HLASY_STR))
+    out[f'praha_mag_{y}'] = dict(pct=float(r.PROCHLSTR), mandaty=i0(r.MAND_STR), hlasy=int(r.HLASY_STR))
 
 # ---------------------------------------------------------------- geo výstupy
 gp5 = dict(type='FeatureCollection', features=[dict(type='Feature', geometry=f['geometry'], properties={'o': int(f['properties']['CISLO'])}) for f in p5_feats])
@@ -597,12 +606,8 @@ for f in geo['features']:
                          properties=dict(m=int(p['MOMC']), o=int(p['CISLO']), p26=round(float(v26), 1), p22=round(float(v22), 1) if v22 is not None and not math.isnan(v22) else None)))
 json.dump(dict(type='FeatureCollection', features=pr_feats), open(os.path.join(OUT, 'okrsky_praha.geojson'), 'w', encoding='utf8'), separators=(',', ':'))
 
-json.dump(out, open(os.path.join(OUT, 'data.json'), 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
+save(out, os.path.join(OUT, 'data.json'))
 
 # CSV po okrscích (pro Excel)
-flat = df.drop(columns=['strany_2026', 'senat']).copy()
-for c in c21.itertuples():
-    flat[f'senat_{c.PRIJMENI}'] = [r['senat'][int(c.CKAND)] for r in out['okrsky']]
-flat.to_csv(os.path.join(OUT, 'okrsky_praha5.csv'), index=False, encoding='utf-8-sig', sep=';', decimal=',')
 pd.DataFrame(ev_out).to_csv(os.path.join(OUT, 'akce.csv'), index=False, encoding='utf-8-sig', sep=';')
 print('OK', len(ev_out), 'akcí;', len(pr_feats), 'pražských okrsků')

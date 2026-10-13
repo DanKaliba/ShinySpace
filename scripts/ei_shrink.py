@@ -14,6 +14,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ei import fit, fit_shrink, neutral_prior, cv_lambda, bootstrap  # noqa: E402
+from jsonio import save  # noqa: E402
 from kvdata import Data, composition, stable, P5, MAG, MC22, MC26, MAGB, PSB  # noqa: E402
 
 DL, OUT = sys.argv[1:3]
@@ -89,5 +90,5 @@ r3 = run('P5 PS→KV', Xq, Yq, tps.VOL_SEZNAM.loc[kq].values.astype(float), Xq.m
 r3.update(kategorie_ps=list(Xq.columns), kategorie_kv=list(Yq.columns))
 data['doplneni']['ps25_kv26']['p5'].update(r3)
 
-json.dump(data, open(os.path.join(OUT, 'data.json'), 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
+save(data, os.path.join(OUT, 'data.json'))
 print('OK')

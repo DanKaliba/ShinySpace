@@ -11,6 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ei import fit  # noqa: E402
+from jsonio import save  # noqa: E402
 
 DL, OUT = sys.argv[1:3]
 P5, SEATS = 500143, 41
@@ -98,7 +99,7 @@ def dhondt(votes, seats, thr_ok):
     for _, p in q[:seats]:
         won[p] += 1
     dhondt.last_party = q[seats - 1][1]
-    return won, q[seats - 1][0], q[seats][0]
+    return won, q[seats - 1][0], (q[seats][0] if len(q) > seats else 0.0)
 
 
 t3, votes, ros, bv, col = T[2026]
@@ -118,19 +119,49 @@ for nazev_var, klauz in varianty.items():
 out['klauzule'] = nazev_var
 out['dhondt_shoda'] = all(won[p] == official[p] for p in won)
 pir = next(p for p, n in ros.ZKRATKAO30.items() if n.startswith('Česká pirátská'))
-# kolik hlasů chybělo na 4. mandát (ostatní beze změny): podíl Pirátů / 4 musí přebít poslední přidělený podíl
-need = last_q * 4 - tv[pir]
+# mandátové hrany simulací: nejmenší počet hlasů navíc (ostatní beze změny), se kterým by Piráti měli n mandátů;
+# pro více mandátů navíc je potřeba vytlačit víc cizích mandátů, proto ne jen „poslední podíl“
+vd = tv.to_dict()
+
+
+def seats_with(extra):
+    v = dict(vd); v[pir] += extra
+    tot = sum(v.values())
+    ok = {p: v[p] / tot * 100 >= klauz[p] for p in v}
+    return dhondt(v, SEATS, ok)[0][pir]
+
+
+def votes_for(target):
+    lo, hi = 0, int(sum(vd.values()))  # víc než všechny hlasy dohromady by nedávalo smysl
+    if seats_with(0) >= target:
+        return 0
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        lo, hi = (lo, mid) if seats_with(mid) >= target else (mid, hi)
+    return hi
+
+
+def reserve_keep(target):
+    lo, hi = 0, int(tv[pir])
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        lo, hi = (mid, hi) if seats_with(-mid) >= target else (lo, mid)
+    return lo
+
+
+last_party = dhondt.last_party  # dřív, než ho simulace přepíšou
+cur = int(official[pir])
+need = votes_for(cur + 1)
 out['mandaty'] = dict(
     oficialni={ros.ZKRATKAO30[p]: int(official[p]) for p in tv.index if official[p]},
     piráti_hlasy=int(tv[pir]),
     posledni_podil=round(float(last_q), 1),
-    posledni_mandat=f"{ros.ZKRATKAO30[dhondt.last_party]} ({official[dhondt.last_party]}. mandát)",
+    posledni_mandat=f"{ros.ZKRATKAO30[last_party]} ({official[last_party]}. mandát)",
     chybelo_na_4_mandat_hlasu=int(math.ceil(need)),
     chybelo_na_4_mandat_volicu=int(math.ceil(need / SEATS)),
-    rezerva_3_mandatu_volicu=int((tv[pir] / 3 - next_q) * 3 // SEATS) if tv[pir] / 3 > next_q else 0,
+    rezerva_3_mandatu_volicu=int(reserve_keep(cur) // SEATS),
+    na_6_mandatu_volicu=int(math.ceil(votes_for(6) / SEATS)),
 )
-# kolik voličů bylo potřeba na 6 mandátů z roku 2022
-out['mandaty']['na_6_mandatu_volicu'] = int(math.ceil((last_q * 6 - tv[pir]) / SEATS))
 
 # ---------------------------------------------------------------- plošný vs. poměrný pokles
 p22, p26 = s22['Piráti'], s26['Piráti']
@@ -264,8 +295,8 @@ for o in ids:
 out['pedersen_okrsky'] = dict(min=round(float(ped_okr.min()), 1), median=round(float(ped_okr.median()), 1), max=round(float(ped_okr.max()), 1))
 
 data['psefologie'] = out
-json.dump(data, open(os.path.join(OUT, 'data.json'), 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
-json.dump(out, open(os.path.join(OUT, 'psefologie.json'), 'w', encoding='utf8'), ensure_ascii=False, indent=1)
+save(data, os.path.join(OUT, 'data.json'))
+save(out, os.path.join(OUT, 'psefologie.json'), indent=1)
 print(json.dumps({k: v for k, v in out.items() if k != 'ei'}, ensure_ascii=False, indent=1))
 print('EI piráti 2022 →', out['ei']['pirati_2022_kam'])
 print('EI piráti 2026 ←', out['ei']['pirati_2026_odkud'])

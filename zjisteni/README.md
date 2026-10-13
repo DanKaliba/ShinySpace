@@ -6,6 +6,7 @@ Texty v této složce se zobrazují přímo na webu – stačí upravit Markdown
 |---|---|
 | `hlavni-zjisteni.md` | sekce „Hlavní zjištění“ nahoře na webu |
 | `metodika.md` | sekce „Metodika a zdroje“ dole na webu |
+| `dalsi-pohledy.md` | sekce „Co v analýze zatím chybí“ |
 
 Další poznámky a rozbory (např. `skoly.md`, `kampan-2026.md`) sem můžete přidávat jako samostatné soubory;
 na web se dostanou, když je přidáte do seznamu `ZJISTENI` na začátku `web/app.js`.

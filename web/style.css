@@ -51,6 +51,8 @@ h2 { font-size: 24px; margin: 0 0 12px; letter-spacing: -.005em; }
 .muted { color: var(--muted); }
 .prose p, .prose li { max-width: 820px; }
 .prose li { margin-bottom: 6px; }
+.prose h1 { font-size: 24px; margin: 0 0 12px; }
+.prose h2 { font-size: 18px; margin: 20px 0 8px; }
 
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding-top: 24px; }
 .tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 14px 16px; }

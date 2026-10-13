@@ -18,3 +18,5 @@ curl -sSL -o zapis/wb/zs_2026.html "https://web.archive.org/web/20260519181720id
 curl -sSL -o zapis/wb/zs_2025.html "https://web.archive.org/web/20250710125855id_/https://zapisdozs-praha5.praha.eu/seznam-skol"
 curl -sSL -o spad/p2026.html https://www.spadovostpraha.cz/2026
 curl -sSL -o spad/addr_2026.bin https://www.spadovostpraha.cz/data/addresses/2026
+# registr sociálních služeb MPSV (domovy pro seniory)
+mkdir -p rpss && curl -sSL -o rpss/rpss.json https://data.mpsv.cz/od/soubory/rpss/rpss.json

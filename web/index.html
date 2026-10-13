@@ -15,7 +15,7 @@
     <h1>Jak dopadli Piráti na Praze 5</h1>
     <p class="lede">Výsledky po všech 81 volebních okrscích Prahy 5: srovnání s komunálními volbami 2022 a sněmovními 2025, konkurence SENu a Starostů, senátní obvod 21 a&nbsp;co ukazují kampaňové akce.</p>
     <nav class="toc" aria-label="Obsah">
-      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#metodika">Metodika</a>
+      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
     </nav>
   </div>
 </header>
@@ -115,6 +115,16 @@
     </div>
   </section>
 
+  <section id="seniori">
+    <h2>Domovy pro seniory: jak se volilo v jejich okrscích</h2>
+    <div id="seniori-text" class="prose"></div>
+    <figure class="card">
+      <figcaption>Pobytová zařízení pro seniory (registr MPSV) a výsledky v jejich okrsku, v 6 sousedních okrscích a v celé Praze 5</figcaption>
+      <div class="tablewrap"><table class="data" id="tb-seniori"></table></div>
+      <p class="small">Zdroj: Registr poskytovatelů sociálních služeb MPSV (data.mpsv.cz), aktivní pobytové služby typu domov pro seniory, domov se zvláštním režimem a odlehčovací služba pro seniory. Kapacita v % = lůžka ÷ zapsaní voliči okrsku – horní odhad vlivu (ne všichni klienti mají trvalý pobyt v zařízení a ne všichni volí).</p>
+    </figure>
+  </section>
+
   <section id="akce">
     <h2>Kampaňové akce a výsledky</h2>
     <div id="akce-text" class="prose"></div>
@@ -171,6 +181,16 @@
         <p class="small">ODS, TOP 09 a KDU jsou sloučené, protože v roce 2022 kandidovaly v jiných koalicích. Podíly jsou z platných hlasů v okrscích, mohou se o desetiny lišit od oficiálních procent.</p>
       </figure>
     </div>
+    <figure class="card">
+      <figcaption>Přesuny voličů 2022 → 2026 (Sankey, odhad ekologickou inferencí)</figcaption>
+      <div class="controls" id="sk-ctrl" role="radiogroup" aria-label="Území">
+        <button role="radio" aria-checked="true" data-v="p5">Praha 5 – zastupitelstvo MČ</button>
+        <button role="radio" aria-checked="false" data-v="praha">Praha – magistrát</button>
+        <label style="margin-left:8px;font-size:14px"><input type="checkbox" id="sk-nev"> včetně lidí, kteří nevolili ani jednou</label>
+      </div>
+      <div id="ch-sankey"></div>
+      <p class="small" id="sk-note"></p>
+    </figure>
   </section>
 
   <section id="senat">
@@ -184,6 +204,19 @@
       <figure class="card">
         <figcaption>Ostatní pražské obvody 2026</figcaption>
         <div class="tablewrap"><table class="data" id="tb-senat-praha"></table></div>
+      </figure>
+    </div>
+    <div class="grid2">
+      <figure class="card">
+        <figcaption>Okrsky: korelace podílu senátních kandidátů s výsledky Pirátů</figcaption>
+        <div class="tablewrap"><table class="data" id="tb-sen-kor"></table></div>
+        <p class="small">Pearsonovo r přes 81 okrsků Prahy 5. Kladné = kandidát je silnější tam, kde jsou silnější Piráti.</p>
+      </figure>
+      <figure class="card">
+        <figcaption>Koho volili v Senátu voliči Pirátů (odhad) a odkud měl hlasy Šarapatka</figcaption>
+        <div class="tablewrap"><table class="data" id="tb-sen-deleni"></table></div>
+        <div class="tablewrap" style="margin-top:12px"><table class="data" id="tb-sar-odkud"></table></div>
+        <p class="small" id="sen-deleni-note"></p>
       </figure>
     </div>
   </section>
@@ -206,6 +239,10 @@
         <div class="tablewrap"><table class="data" id="tb-magk"></table></div>
       </figure>
     </div>
+  </section>
+
+  <section id="dalsi" class="prose">
+    <div data-md="dalsi-pohledy.md"></div>
   </section>
 
   <section id="metodika" class="prose">

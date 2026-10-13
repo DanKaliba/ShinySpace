@@ -9,6 +9,9 @@ import sys, os, json, math
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ei import fit  # noqa: E402
+
 DL, OUT = sys.argv[1:3]
 P5, SEATS = 500143, 41
 rng = np.random.default_rng(2026)
@@ -162,33 +165,12 @@ X26, reg26 = composition(2026)
 cats = list(X22.columns)
 
 
-def proj_simplex(v):
-    u = np.sort(v)[::-1]; css = np.cumsum(u)
-    rho = np.nonzero(u * np.arange(1, len(v) + 1) > (css - 1))[0][-1]
-    th = (css[rho] - 1) / (rho + 1)
-    return np.maximum(v - th, 0)
-
-
-def fit(X, Y, w, iters=6000):
-    X, Y = np.asarray(X), np.asarray(Y)
-    W = np.sqrt(w / w.mean())[:, None]
-    Xw, Yw = X * W, Y * W
-    k = X.shape[1]
-    Bm = np.tile(Y.mean(0), (k, 1))
-    L = np.linalg.norm(Xw.T @ Xw, 2)
-    step = 1 / L
-    for _ in range(iters):
-        G = Xw.T @ (Xw @ Bm - Yw)
-        Bm = np.apply_along_axis(proj_simplex, 1, Bm - step * G)
-    return Bm
-
-
 w = reg22.values
 Bhat = fit(X22.values, X26.values, w)
 boot = []
 for _ in range(200):
     idx = rng.integers(0, len(units), len(units))
-    boot.append(fit(X22.values[idx], X26.values[idx], w[idx], iters=2500))
+    boot.append(fit(X22.values[idx], X26.values[idx], w[idx]))
 boot = np.array(boot)
 lo, hi = np.percentile(boot, 5, axis=0), np.percentile(boot, 95, axis=0)
 # celkový počet voličů v přesunu (v osobách) = podíl × velikost kategorie 2022
@@ -214,7 +196,7 @@ out['ei']['r2_pirati_2026'] = round(float(1 - ((X26['Piráti'] - pred[:, j]) ** 
 V22 = X22.drop(columns='Nevoliči'); V22 = V22.div(V22.sum(1), axis=0)
 V26 = X26.drop(columns='Nevoliči'); V26 = V26.div(V26.sum(1), axis=0)
 Bv = fit(V22.values, V26.values, w)
-bv_boot = np.array([fit(V22.values[ix], V26.values[ix], w[ix], iters=2500) for ix in (rng.integers(0, len(units), len(units)) for _ in range(200))])
+bv_boot = np.array([fit(V22.values[ix], V26.values[ix], w[ix]) for ix in (rng.integers(0, len(units), len(units)) for _ in range(200))])
 iv = list(V22.columns).index('Piráti')
 out['ei']['jen_volici_pirati_2022_kam'] = sorted([dict(kam=c, pct=round(float(Bv[iv, k]) * 100, 1), p05=round(float(np.percentile(bv_boot[:, iv, k], 5)) * 100, 1),
                                                        p95=round(float(np.percentile(bv_boot[:, iv, k], 95)) * 100, 1)) for k, c in enumerate(V26.columns)], key=lambda d: -d['pct'])

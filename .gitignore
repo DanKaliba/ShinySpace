@@ -1,0 +1,5 @@
+# zdrojová stažená data a interní podklady se necommitují
+dl/
+volby_source/
+okrsky.json
+__pycache__/

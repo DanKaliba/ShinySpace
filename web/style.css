@@ -60,7 +60,8 @@ h2 { font-size: 24px; margin: 0 0 12px; letter-spacing: -.005em; }
 .tile .d b.down { color: var(--down); font-weight: 600; }
 .tile .d b.up { color: var(--up); font-weight: 600; }
 
-.findings { padding-left: 22px; max-width: 900px; }
+.findings { max-width: 900px; }
+.findings ol, .findings ul { padding-left: 22px; }
 .findings li { margin-bottom: 10px; }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }

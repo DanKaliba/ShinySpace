@@ -210,8 +210,17 @@ function legend(elm, breaks, ramp, fmt) {
   elm.innerHTML = ramp.map((c, i) => `<span><span class="sw" style="background:${c}"></span>${lab(i)}</span>`).join('');
 }
 
+/* ---------- zjištění z Markdownu (složka zjisteni/) ---------- */
+const ZJISTENI = ['hlavni-zjisteni.md', 'metodika.md'];
+document.querySelectorAll('[data-md]').forEach((elm) => {
+  if (!ZJISTENI.includes(elm.dataset.md)) return;
+  fetch('../zjisteni/' + elm.dataset.md).then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status)))).then((md) => {
+    elm.innerHTML = window.marked ? marked.parse(md) : `<pre>${esc(md)}</pre>`;
+  }).catch((e) => { elm.innerHTML = `<p class="muted">Soubor zjisteni/${esc(elm.dataset.md)} se nepodařilo načíst (${esc(e.message)}).</p>`; });
+});
+
 /* ---------- hlavní ---------- */
-fetch('data/data.json').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -242,19 +251,6 @@ function init(D) {
     tile('Praha – magistrát celkem', pct(D.praha_mag_2026.pct, 2), `<b class="down">${pp(D.praha_mag_2026.pct - D.praha_mag_2022.pct, 2)}</b> · ${D.praha_mag_2026.mandaty} mandátů (2022: ${D.praha_mag_2022.mandaty})`) +
     tile('Účast Praha 5', pct(P.ucast_2026), `<b class="up">${pp(P.ucast_2026 - P.ucast_2022)}</b> · ≈ ${int(P.mc_volici_2026)} pirátských voličů (2022: ${int(P.mc_volici_2022)})`);
 
-  /* findings */
-  $('#findings').innerHTML = [
-    `<b>Praha 5: z 11,74 % na ${nf(P.mc_2026, 2)} %, ze 6 na ${P.mc_mand_2026} mandáty.</b> Hlasy Pirátů odpovídají zhruba ${int(P.mc_volici_2026)} voličům místo ${int(P.mc_volici_2022)} (−${nf((1 - P.mc_volici_2026 / P.mc_volici_2022) * 100, 0)} %), přestože účast stoupla o ${nf(P.ucast_2026 - P.ucast_2022)} p. b.`,
-    `<b>Propad je celopražský, ne pětkový.</b> Na magistrát Piráti klesli v Praze ze ${nf(D.praha_mag_2022.pct, 2)} % na ${nf(D.praha_mag_2026.pct, 2)} % (${D.praha_mag_2022.mandaty} → ${D.praha_mag_2026.mandaty} mandátů) a ztratili ve všech ${mcDown} městských částech. Praha 5 je s ${nf(P.mag_2026, 2)} % na magistrát mírně nad pražským průměrem.`,
-    `<b>Místní kandidátka ztratila méně než magistrátní.</b> Na Praze 5 přišla listina do MČ o ${nf(-relMc, 0)} % svého výsledku, magistrátní o ${nf(-relMag, 0)} %. Rozdíl mezi oběma hlasováními se zúžil z ${nf(P.mag_2022 - P.mc_2022)} na ${nf(P.mag_2026 - P.mc_2026)} p. b.`,
-    `<b>Největší přírůstek mají Starostové, ne SEN.</b> STAN na Praze 5 vyrostl z ${nf(stan22.pct, 2)} na ${nf(stan26.pct, 2)} % (na magistrát z ${nf(magStan('2022').pct)} na ${nf(magStan('2026').pct)} %). SEN Václava Lásky přidal jen ${pp(sen26.pct - sen22.pct, 2)} (na ${nf(sen26.pct, 2)} %, ${sen26.mandaty} mandátů). V okrscích změna Pirátů nesouvisí se změnou STAN (r = ${nf(S['mc_delta~stan_delta'], 2)}) ani SEN (r = ${nf(S['mc_delta~sen_delta'], 2)}), takže pokles byl plošný a okrsková data neřeknou, ke komu voliči odešli.`,
-    `<b>Ztráta v ${down} z 81 okrsků, nejvíc tam, kde byli Piráti nejsilnější</b> (korelace výsledku 2022 a změny r = ${nf(S['mc_2022~mc_delta'], 2)}). Nejhůř: ${worst.map((o) => `${o.okrsek} ${o.ctvrt} (${pp(o.mc_delta)})`).join(', ')}. Růst v ${ups.length} okrscích, výrazně jen ${ups[0].okrsek} v Košířích (${pp(ups[0].mc_delta)}).`,
-    `<b>Akce se v okrskových výsledcích neprojevily.</b> ${pub.length} veřejných akcí, z toho ${kamp.length} v září a říjnu. Barrandov měl nejvíc akcí (${C['Barrandov'].akci}) a zároveň největší pokles mezi velkými čtvrtěmi (${nf(C['Barrandov'].mc_2022)} → ${nf(C['Barrandov'].mc_2026)} %). Mezi počtem akcí v okolí a změnou výsledku není vztah (r = ${nf(S['akci_kampan_do_700m~mc_delta'], 2)}, po kontrole výchozí úrovně t = ${nf(S.ols_mc_delta.akci_kampan_do_700m.t, 2)}).`,
-    `<b>Školy:</b> do školek nebylo v roce 2026 přijato ${D.skoly.souhrn.ms_2026.neprijato} dětí (2025: ${D.skoly.souhrn.ms_2025.neprijato}), do 1. tříd ${D.skoly.souhrn.zs_2026.neprijato}. Nejhorší je situace ve školkách na Barrandově (úspěšnost žádostí ${pct(C['Barrandov'].ms_uspesnost, 0)}) a v Košířích (${pct(C['Košíře'].ms_uspesnost, 0)}). Piráti jsou silnější tam, kde je o spádovou ZŠ větší zájem, ale se změnou výsledku to nesouvisí.`,
-    `<b>Preferenční hlasy:</b> mandáty mají ${mandK.map((k) => k.jmeno.replace(/^(Ing\.|Mgr\.|PhDr\.|MUDr\.)\s/, '')).join(', ')}. ${kryl ? `${kryl.jmeno.replace(/^Ing\.\s/, '')} postoupil ze 6. místa díky Barrandovu (index ${nf(kryl.index_ctvrti.Barrandov, 0)}).` : ''} Debaty „Na rovinu“ v preferencích hostů stopu nenechaly.`,
-    `<b>Senát, obvod 21:</b> Piráti neměli kandidáta. Do 2. kola (16.–17. 10.) jdou ${lask.jmeno} (${pct(lask.pct)}) a ${sab.jmeno} (${pct(sab.pct)}). Láska je silný tam, kde i SEN (r = ${nf(S['sen_2026~laska'], 2)}), s Piráty mírně proti sobě (r = ${nf(S['mc_2026~laska'], 2)}).`,
-  ].map((t) => `<li>${t}</li>`).join('');
-
   /* Praha */
   $('#praha-note').innerHTML = `Účast v Praze ${pct(D.praha_ucast_2026)} (2022: ${pct(D.praha_ucast_2022)}). Ve sněmovních volbách 2025 měli Piráti v Praze ${pct(D.praha_ps25, 2)}.`;
   const fam = [
@@ -270,7 +266,7 @@ function init(D) {
   const mapPraha = L.map('map-praha', { scrollWheelZoom: false, zoomSnap: 0.25 });
   tiles(mapPraha);
   const brP = [6, 8, 10, 12, 14];
-  fetch('data/okrsky_praha.geojson').then((r) => r.json()).then((g) => {
+  fetch('../data/okrsky_praha.geojson').then((r) => r.json()).then((g) => {
     const mcName = Object.fromEntries(D.mc.map((m) => [m.kod, m.nazev]));
     const lyr = L.geoJSON(g, {
       style: (f) => ({ fillColor: binColor(f.properties.p26, brP, BLUE), fillOpacity: 0.8, color: css('--surface'), weight: 0.4 }),
@@ -353,7 +349,7 @@ function init(D) {
     if (cur.k === 'mc_delta') $('#lg-p5').insertAdjacentHTML('beforeend', '<span class="muted">p. b.</span>');
     if (cur.k === 'akce') $('#lg-p5').insertAdjacentHTML('beforeend', '<span class="muted">akcí v kampani do 700 m od okrsku</span>');
   }
-  fetch('data/okrsky_p5.geojson').then((r) => r.json()).then((g) => {
+  fetch('../data/okrsky_p5.geojson').then((r) => r.json()).then((g) => {
     p5lyr = L.geoJSON(g, {
       style: styleF,
       onEachFeature: (f, l) => {
@@ -541,8 +537,6 @@ function init(D) {
     { k: 'mandat', label: 'Mandát', f: (r) => (r.mandat ? '✓' : '') },
   ], D.mag_kandidati.slice(0, 15));
 
-  const o = S.ols_mc_delta;
-  $('#ols').textContent = `Výsledek: R² = ${nf(S.ols_r2, 2)}; akce b = ${nf(o.akci_kampan_do_700m.b, 2)} (t = ${nf(o.akci_kampan_do_700m.t, 2)}), výsledek 2022 b = ${nf(o.mc_2022.b, 2)} (t = ${nf(o.mc_2022.t, 1)}), Δ účasti t = ${nf(o.ucast_delta.t, 2)}, Δ SEN t = ${nf(o.sen_delta.t, 2)}. Změnu vysvětluje hlavně výchozí úroveň (návrat k průměru); akce nic.`;
 
   select(5011);
 }

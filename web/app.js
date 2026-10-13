@@ -246,7 +246,7 @@ function init(D) {
   /* tiles */
   const tile = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
   $('#tiles').innerHTML =
-    tile('Praha 5 – zastupitelstvo MČ', pct(P.mc_2026, 2), `<b class="down">${pp(P.mc_2026 - P.mc_2022, 2)}</b> · ${P.mc_mand_2026} mandáty z 45 (2022: ${P.mc_mand_2022})`) +
+    tile('Praha 5 – zastupitelstvo MČ', pct(P.mc_2026, 2), `<b class="down">${pp(P.mc_2026 - P.mc_2022, 2)}</b> · ${P.mc_mand_2026} mandáty z 41 (2022: ${P.mc_mand_2022})`) +
     tile('Praha 5 – hlasy na magistrát', pct(P.mag_2026, 2), `<b class="down">${pp(P.mag_2026 - P.mag_2022, 2)}</b> proti 2022`) +
     tile('Praha – magistrát celkem', pct(D.praha_mag_2026.pct, 2), `<b class="down">${pp(D.praha_mag_2026.pct - D.praha_mag_2022.pct, 2)}</b> · ${D.praha_mag_2026.mandaty} mandátů (2022: ${D.praha_mag_2022.mandaty})`) +
     tile('Účast Praha 5', pct(P.ucast_2026), `<b class="up">${pp(P.ucast_2026 - P.ucast_2022)}</b> · ≈ ${int(P.mc_volici_2026)} pirátských voličů (2022: ${int(P.mc_volici_2022)})`);
@@ -312,6 +312,7 @@ function init(D) {
     { k: 'laska', label: 'Láska (senát)', br: [20, 25, 30, 35, 40], ramp: ORANGE, get: (o) => o.senat['3'] },
     { k: 'ucast_2026', label: 'Účast 2026', br: [35, 42, 48, 54, 60], ramp: BLUE },
     { k: 'zs_uspesnost', label: 'Spádová ZŠ: úspěšnost', br: [65, 75, 85, 92, 98], ramp: BLUE },
+    { k: 'pedersen', label: 'Volatilita (Pedersen)', br: [10, 13, 16, 19, 22], ramp: ORANGE, fmt: (v) => v },
     { k: 'akce', label: 'Akce', br: [1, 3, 6, 10, 14], ramp: BLUE, get: (o) => o.akci_kampan_do_700m, fmt: (v) => v, unit: ' akcí do 700 m' },
   ];
   let cur = LAYERS[0], sel = null;
@@ -380,6 +381,8 @@ function init(D) {
         <dt>STAN 2022 → 2026</dt><dd>${pct(o.stan_2022)} → ${pct(o.stan_2026)}</dd>
         <dt>Senát: Láska / Sáblík</dt><dd>${pct(o.senat['3'])} / ${pct(o.senat['6'])}</dd>
         <dt>Akcí do 700 m (celkem / kampaň)</dt><dd>${o.akci_do_700m} / ${o.akci_kampan_do_700m}</dd>
+        <dt>Volatilita (Pedersen)</dt><dd>${nf(o.pedersen)}</dd>
+        <dt>Efektivní počet stran 2022 → 2026</dt><dd>${nf(o.enp_2022)} → ${nf(o.enp_2026)}</dd>
         <dt>Spádová ZŠ</dt><dd>${esc(o.zs_skola || '–')}</dd>
         <dt>Úspěšnost žádostí 2026 (2025)</dt><dd>${pct(o.zs_uspesnost, 0)} (${pct(o.zs_uspesnost_2025, 0)})</dd>
       </dl>
@@ -508,6 +511,29 @@ function init(D) {
   const ser2 = [{ key: 'SEN', color: css('--s2') }, { key: 'STAN', color: css('--s1') }];
   scatter($('#ch-delta-konk'), pts, { xl: 'změna konkurenta (p. b.)', yl: 'změna Pirátů (p. b.)', series: ser2, fit: true });
   $('#lg-delta-konk').innerHTML = ser2.map((s) => `<span><span class="sw dot" style="background:${s.color}"></span>${s.key}</span>`).join('') + '<span class="muted">čára = lineární trend</span>';
+
+  /* Psefologie */
+  const PS = D.psefologie, M = PS.mandaty;
+  const tile2 = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+  $('#pse-tiles').innerHTML =
+    tile2('Na 4. mandát chybělo', `${int(M.chybelo_na_4_mandat_hlasu)} hlasů`, `≈ ${M.chybelo_na_4_mandat_volicu} voličů s plným hlasováním · poslední mandát: ${esc(M.posledni_mandat.replace(/ s podporou.*\(/, ' ('))}`) +
+    tile2('Volatilita Praha 5 (Pedersen)', nf(PS.pedersen_p5), `bloky stran 2022 → 2026; v okrscích ${nf(PS.pedersen_okrsky.min)}–${nf(PS.pedersen_okrsky.max)}`) +
+    tile2('Efektivní počet stran', `${nf(PS.enp_hlasy_2022)} → ${nf(PS.enp_hlasy_2026)}`, `podle hlasů; podle mandátů ${nf(PS.enp_mandaty_2022)} → ${nf(PS.enp_mandaty_2026)}`) +
+    tile2('Prostorové shlukování změny', `I = ${nf(PS.moran['piráti_zmena'][0], 2)}`, `Moranovo I, p = ${nf(PS.moran['piráti_zmena'][1], 2)} – změna je prostorově náhodná`);
+  const top = PS.ei.pirati_2022_kam.filter((r) => r.kam !== 'Piráti').slice(0, 3);
+  const keep = PS.ei.pirati_2022_kam.find((r) => r.kam === 'Piráti'), keepV = PS.ei.jen_volici_pirati_2022_kam.find((r) => r.kam === 'Piráti');
+  $('#pse-text').innerHTML = `<p><b>Mandáty:</b> přepočet D'Hondtovou metodou s 5% klauzulí přesně odpovídá oficiálnímu výsledku${PS.dhondt_shoda ? '' : ' (POZOR: neodpovídá)'}. Pirátům chybělo na 4. mandát ${int(M.chybelo_na_4_mandat_hlasu)} hlasů, tedy asi ${M.chybelo_na_4_mandat_volicu} voličů, kteří by dali všech 41 hlasů Pirátům. Poslední, 41. mandát připadl SENu jako jeho 6. mandát. Na udržení 6 mandátů z roku 2022 by bylo potřeba ještě zhruba ${int(M.na_6_mandatu_volicu)} voličů. Třetí mandát měli Piráti jistý s rezervou asi ${int(M.rezerva_3_mandatu_volicu)} voličů.</p>
+    <p><b>Plošný, nebo poměrný pokles?</b> Poměrný model (každý okrsek ztratil stejný podíl, ${nf((1 - PS.swing.pomer) * 100, 0)} %) sedí lépe než plošný (všude stejně procentních bodů): chyba ${nf(PS.swing.rmse_pomerny, 2)} proti ${nf(PS.swing.rmse_plosny, 2)} p. b. Piráti ztratili nejvíc tam, kde měli nejvíc. Změna se prostorově neshlukuje (Moranovo I = ${nf(PS.moran['piráti_zmena'][0], 2)}, p = ${nf(PS.moran['piráti_zmena'][1], 2)}), zatímco SEN je silně soustředěný (I = ${nf(PS.moran.sen_2026[0], 2)}). Z 81 lokálních testů (LISA) nezůstal po korekci na vícenásobné testování (FDR) žádný významný shluk.</p>
+    <p><b>Kam odešli voliči?</b> Ekologická inference z rozdílů mezi okrsky naznačuje, že Piráti si udrželi jen asi ${nf(keep.pct, 0)}–${nf(keepV.pct, 0)} % svých voličů z roku 2022. Nejvíc odchodů míří k bloku ODS, TOP 09 a KDU (${nf(top[0].pct, 0)} %, interval ${nf(top[0].p05, 0)}–${nf(top[0].p95, 0)} %), dál k ${top.slice(1).map((r) => `${esc(r.kam)} (${nf(r.pct, 0)} %)`).join(' a ')}. Odhad pro STAN je nejistý (0–${nf(PS.ei.pirati_2022_kam.find((r) => r.kam === 'STAN').p95, 0)} %). Model vysvětluje jen ${nf(PS.ei.r2_pirati_2026 * 100, 0)} % rozdílů pirátského výsledku mezi okrsky, takže jde o orientační odhad: intervaly jsou široké a kategorie se překrývají.</p>`;
+  const vMap = Object.fromEntries(PS.ei.jen_volici_pirati_2022_kam.map((r) => [r.kam, r]));
+  table($('#tb-ei'), [
+    { k: 'kam', label: 'Kam (2026)' },
+    { k: 'pct', label: 'Odhad', n: 1, f: (r) => `<b>${nf(r.pct, 0)} %</b>` },
+    { k: 'int', label: '90% interval', n: 1, f: (r) => `${nf(r.p05, 0)}–${nf(r.p95, 0)} %` },
+    { k: 'volicu', label: '≈ voličů', n: 1, f: (r) => int(r.volicu) },
+    { k: 'v', label: 'Jen voliči', n: 1, f: (r) => (vMap[r.kam] ? `${nf(vMap[r.kam].pct, 0)} % (${nf(vMap[r.kam].p05, 0)}–${nf(vMap[r.kam].p95, 0)})` : '–') },
+  ], PS.ei.pirati_2022_kam);
+  dumbbell($('#ch-bloky'), PS.bloky.map((b) => ({ label: b.blok, a: b.p2022, b: b.p2026, hi: b.blok === 'Piráti', lab: true })).sort((x, y) => y.b - x.b), { max: 30 });
 
   /* Senát */
   $('#senat-text').innerHTML = `<p>V okrscích Prahy 5 byla účast v 1. kole ${pct(D.senat.ucast_p5)}. Piráti vlastního kandidáta neměli; Václav Láska je zároveň tváří kandidátky SEN, tedy přímého konkurenta Pirátů v MČ. V ostatních pražských obvodech podpořili Piráti v obvodu 27 koaličního kandidáta Jiřího Padevěta.</p>`;

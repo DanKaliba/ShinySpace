@@ -11,6 +11,7 @@ DL, SRC, OKRJ, OUT = sys.argv[1:5]
 os.makedirs(OUT, exist_ok=True)
 PIR = '720'
 P5 = 500143
+MC_SEATS = 41  # zastupitelstvo MČ Praha 5 (kvrzcoco.MANDATY) = počet hlasů jednoho voliče
 MAG = 554782
 
 
@@ -177,8 +178,8 @@ for y in (2022, 2026):
                 names = a.ZKRATKAO30.tolist()
                 pirname = ros[(ros.KODZASTUP == P5) & (ros.PIR == True)].ZKRATKAO30.iloc[0]
                 rows[o][f'mc_poradi_{y}'] = names.index(pirname) + 1 if pirname in names else None
-                # "voličské ekvivalenty" = pirátské hlasy / počet mandátů (45 v Praze 5)
-                rows[o][f'mc_volici_pir_{y}'] = round(float(pv.get(o, 0) / 45), 1)
+                # "voličské ekvivalenty" = pirátské hlasy / počet mandátů (41 v Praze 5)
+                rows[o][f'mc_volici_pir_{y}'] = round(float(pv.get(o, 0) / MC_SEATS), 1)
 
 for o in rows:
     if (P5, o) in ps_okr.index:
@@ -555,7 +556,7 @@ for y in (2022, 2026):
     summ[f'odevzdano_{y}'] = int(t.ODEVZ_OBAL.sum())
     r = ros[(ros.KODZASTUP == P5) & (ros.PIR == True)].iloc[0]
     summ[f'mc_{y}'] = float(r.PROCHLSTR); summ[f'mc_mand_{y}'] = int(r.MAND_STR); summ[f'mc_hlasy_{y}'] = int(r.HLASY_STR)
-    summ[f'mc_volici_{y}'] = round(r.HLASY_STR / 45)
+    summ[f'mc_volici_{y}'] = round(r.HLASY_STR / MC_SEATS)
     tm = t3[(t3.OBEC == P5) & (t3.KODZASTUP == MAG)]
     hm = hl[(hl.OBEC == P5) & (hl.KODZASTUP == MAG) & (hl.PIR == True)]
     summ[f'mag_{y}'] = round(float(hm.POC_HLASU.sum() / tm.PL_HL_CELK.sum() * 100), 2)

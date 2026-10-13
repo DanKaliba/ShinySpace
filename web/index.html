@@ -15,7 +15,7 @@
     <h1>Jak dopadli Piráti na Praze 5</h1>
     <p class="lede">Výsledky po všech 81 volebních okrscích Prahy 5: srovnání s komunálními volbami 2022 a sněmovními 2025, konkurence SENu a Starostů, senátní obvod 21 a&nbsp;co ukazují kampaňové akce.</p>
     <nav class="toc" aria-label="Obsah">
-      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
+      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#demografie">Demografie</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
     </nav>
   </div>
 </header>
@@ -78,7 +78,7 @@
       <aside class="card detail" id="okr-detail" aria-live="polite"><p class="muted">Vyber okrsek v mapě nebo v tabulce.</p></aside>
     </div>
     <figure class="card">
-      <figcaption>Všech 81 okrsků <a class="dl" href="../data/okrsky_praha5.csv" download>Stáhnout CSV</a></figcaption>
+      <figcaption>Všech 81 okrsků <a class="dl" href="../data/okrsky_praha5.csv" download>Stáhnout CSV</a> <a class="dl" href="../data/okrsky_demografie_sldb2021.csv" download>Demografie CSV</a></figcaption>
       <div class="controls"><label>Čtvrť <select id="f-ctvrt"><option value="">všechny</option></select></label></div>
       <div class="tablewrap tall"><table class="data sortable" id="tb-okr"></table></div>
     </figure>
@@ -111,6 +111,35 @@
       <figure class="card">
         <figcaption>Okrsky: tlak na spádovou ZŠ (žádostí na místo) vs. Piráti 2026</figcaption>
         <div id="ch-zs-pir"></div>
+      </figure>
+    </div>
+  </section>
+
+  <section id="demografie">
+    <h2>Demografie ze sčítání 2021</h2>
+    <div id="demo-tiles" class="tiles"></div>
+    <div id="demo-text" class="prose"></div>
+    <div class="grid2">
+      <figure class="card">
+        <figcaption>Okrsky Prahy 5: korelace demografie a výsledků</figcaption>
+        <div class="tablewrap"><table class="data" id="tb-demo-kor"></table></div>
+        <p class="small">Pearsonovo r přes 80 okrsků (bez 5008). Tučně = významné po korekci FDR. Demografie je z 1km gridu sčítání, takže sousední okrsky mají podobné hodnoty a skutečná nezávislost je menší, než napovídá 80 okrsků.</p>
+      </figure>
+      <figure class="card">
+        <figcaption>Okrsky: podíl dětí 0–14 let vs. Piráti 2026 (oranžově Barrandov)</figcaption>
+        <div id="ch-demo-deti"></div>
+      </figure>
+    </div>
+    <div class="grid2">
+      <figure class="card">
+        <figcaption>57 pražských MČ: vysokoškoláci vs. Piráti na magistrát 2022 a 2026</figcaption>
+        <div id="ch-demo-vs"></div>
+        <div class="legend" id="lg-demo-vs"></div>
+      </figure>
+      <figure class="card">
+        <figcaption>MČ podle podílu vysokoškoláků (třetiny, vážené obyvateli)</figcaption>
+        <div class="tablewrap"><table class="data" id="tb-demo-terc"></table></div>
+        <div class="tablewrap" style="margin-top:12px"><table class="data" id="tb-demo-mckor"></table></div>
       </figure>
     </div>
   </section>

@@ -20,3 +20,13 @@ curl -sSL -o spad/p2026.html https://www.spadovostpraha.cz/2026
 curl -sSL -o spad/addr_2026.bin https://www.spadovostpraha.cz/data/addresses/2026
 # registr sociálních služeb MPSV (domovy pro seniory)
 mkdir -p rpss && curl -sSL -o rpss/rpss.json https://data.mpsv.cz/od/soubory/rpss/rpss.json
+# Sčítání 2021 – Statistický atlas ČSÚ (1km grid přes Prahu 5 a ukazatele za pražské MČ)
+mkdir -p census
+B=https://geodata.csu.gov.cz/server/rest/services/Hosted
+ENV="geometry=14.30,50.00,14.43,50.09&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&returnGeometry=true&f=geojson&outFields=*&where=1%3D1"
+for l in sldb2021_obyvatelstvo/FeatureServer/15948 byty/FeatureServer/25948 srovnani_sldb/FeatureServer/245948 vyjizdka/FeatureServer/175948; do
+  curl -sSL -o "census/${l%%/*}.geojson" "$B/$l/query?$ENV"
+done
+curl -sSL -o census/p5_zuj.json "$B/sldb2021_obyvatelstvo/FeatureServer/10051/query?where=kod%3D%27500143%27&outFields=*&returnGeometry=false&f=json"
+curl -sSL -o census/praha_zuj.json "$B/sldb2021_obyvatelstvo/FeatureServer/10051/query?where=kod%20LIKE%20%275%25%27%20AND%20nazev%20LIKE%20%27Praha%25%27&outFields=*&returnGeometry=false&f=json"
+

@@ -4,7 +4,7 @@ Seřazeno podle toho, kolik by to podle mě přineslo pro rozhodování příšt
 
 ## Data jsou volně k dispozici, jde jen o práci
 
-1. **Demografie po okrscích (SLDB 2021).** Věk, vzdělání a typ domácností ze sčítání 2021 za základní sídelní jednotky (ZSJ) se dají přepočítat na volební okrsky. Teprve pak půjde poctivě oddělit „kde bydlí mladí vzdělaní“ od dopadu kampaně. Dnes to zastupuje jen výsledek PS 2025.
+1. ~~**Demografie po okrscích (SLDB 2021).**~~ *Hotovo v sekci Demografie, s omezením: věk a byty z 1km gridu, vzdělání jen po MČ. Vzdělání po okrscích by vyžadovalo data ČSÚ za ZSJ nebo za sčítací obvody (na objednávku).*
 2. **Dělení hlasů mezi MČ a magistrátem.** Stejní voliči ve stejný den: kolik voličů pirátské magistrátní kandidátky nevolilo Piráty v MČ a naopak, po okrscích. Ukáže, kde je „značka“ silnější než místní tým.
 3. **Preferenční hlasy na magistrát po okrscích Prahy 5.** Kteří pražští lídři táhli na Praze 5 a kde.
 4. **Sněmovna 2025 → komunál 2026 jako přesun voličů.** Stejný model jako Sankey, jen s PS 2025 na vstupu. Kolik lidí, kteří Piráty volili před rokem, letos nepřišlo vůbec.

@@ -350,6 +350,9 @@ function init(D) {
     { k: 'senat_sarapatka', label: 'Šarapatka (senát)', br: [12, 16, 20, 24, 28], ramp: ORANGE, get: (o) => o.senat['2'] },
     { k: 'ucast_2026', label: 'Účast 2026', br: [35, 42, 48, 54, 60], ramp: BLUE },
     { k: 'zs_uspesnost', label: 'Spádová ZŠ: úspěšnost', br: [65, 75, 85, 92, 98], ramp: BLUE },
+    { k: 'cen_0_14', label: 'Děti 0–14 (SLDB)', br: [12, 14, 16, 18, 20], ramp: BLUE },
+    { k: 'cen_65', label: 'Senioři 65+ (SLDB)', br: [12, 14, 16, 18, 20], ramp: BLUE },
+    { k: 'cen_rust_11_21', label: 'Růst obyvatel 2011–21', br: [-5, 0, 5, 10, 20], ramp: BLUE, fmt: (v) => v + ' %' },
     { k: 'pedersen', label: 'Volatilita (Pedersen)', br: [10, 13, 16, 19, 22], ramp: ORANGE, fmt: (v) => v },
     { k: 'akce', label: 'Akce', br: [1, 3, 6, 10, 14], ramp: BLUE, get: (o) => o.akci_kampan_do_700m, fmt: (v) => v, unit: ' akcí do 700 m' },
   ];
@@ -428,6 +431,8 @@ function init(D) {
         <dt>Akcí do 700 m (celkem / kampaň)</dt><dd>${o.akci_do_700m} / ${o.akci_kampan_do_700m}</dd>
         <dt>Volatilita (Pedersen)</dt><dd>${nf(o.pedersen)}</dd>
         <dt>Efektivní počet stran 2022 → 2026</dt><dd>${nf(o.enp_2022)} → ${nf(o.enp_2026)}</dd>
+        <dt>SLDB 2021: děti / 65+</dt><dd>${pct(o.cen_0_14)} / ${pct(o.cen_65)}</dd>
+        <dt>Růst obyvatel 2011–21</dt><dd>${pct(o.cen_rust_11_21)}</dd>
         <dt>Spádová ZŠ</dt><dd>${esc(o.zs_skola || '–')}</dd>
         <dt>Úspěšnost žádostí 2026 (2025)</dt><dd>${pct(o.zs_uspesnost, 0)} (${pct(o.zs_uspesnost_2025, 0)})</dd>
       </dl>
@@ -628,6 +633,50 @@ function init(D) {
       { k: 'pct', label: 'Podíl', n: 1, f: (r) => `${nf(r.pct, 0)} %` },
     ], RZ.sarapatka_odkud);
     $('#sen-deleni-note').textContent = `Odhad ekologickou inferencí: senátní a obecní volby proběhly ve stejný den, takže v okrsku jde o stejné voliče. Model vysvětluje ${nf(SD.r2 * 100, 0)} % rozdílů ve výsledcích kandidátů mezi okrsky (80 okrsků bez 5008, bootstrap 200×). Bloky: Piráti, PRAHA 5 SOBĚ, ODS + TOP 09 + KDU, STAN, SEN, ANO, ostatní.`;
+  }
+
+  /* Demografie (SLDB 2021) */
+  if (D.census) {
+    const CE = D.census, K = CE.kontrola, PS5 = CE.p5_sldb;
+    const tile3 = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+    const kr = (a, b) => CE.korelace_okrsky.find((x) => x.demo === a && x.vysledek === b);
+    const mk = (a, b) => CE.korelace_mc.find((x) => x.demo === a && x.vysledek === b);
+    const T3 = CE.mc_tercily_vs, lo = T3[0], hi = T3[T3.length - 1];
+    $('#demo-tiles').innerHTML =
+      tile3('Praha 5 ve sčítání 2021', int(PS5.obyv), `obyvatel · ${pct(PS5.vs, 0)} vysokoškoláků · průměrný věk ${nf(PS5.vek)}`) +
+      tile3('Děti × Piráti (okrsky)', `r = ${nf(kr('cen_0_14', 'mc_2026').r, 2)}`, `kde víc dětí, tam slabší Piráti; SEN opačně (r = ${nf(kr('cen_0_14', 'sen_2026').r, 2)})`) +
+      tile3('Vzdělání × Piráti (57 MČ)', `${nf(hi.mag_2022 - lo.mag_2022)} → ${nf(hi.mag_2026 - lo.mag_2026)} p. b.`, 'náskok v nejvzdělanějších MČ proti nejméně vzdělaným, 2022 → 2026') +
+      tile3('Kontrola gridu', `${nf(K.v65_odhad)} %`, `podíl 65+ z okrsků vs. ${nf(K.v65_sldb)} % oficiálně; obyvatel ${int(K.obyv_odhad)} vs. ${int(K.obyv_sldb)}`);
+    $('#demo-text').innerHTML = `<p><b>Okrsky Prahy 5.</b> Piráti jsou slabší tam, kde žije víc dětí (r = ${nf(kr('cen_0_14', 'mc_2026').r, 2)}) a seniorů (r = ${nf(kr('cen_65', 'mc_2026').r, 2)}). Rodinné okrsky zároveň ztratily víc i po zohlednění výsledku z roku 2022 (regrese: děti t = ${nf(CE.regrese.zmena.koef.cen_0_14.t, 1)}, senioři t = ${nf(CE.regrese.zmena.koef.cen_65.t, 1)}, růst obyvatel t = ${nf(CE.regrese.zmena.koef.cen_rust_11_21.t, 1)}). SEN je naopak nejsilnější v rodinných okrscích (Barrandov). Šarapatka i STAN mají vyšší podíl tam, kde je víc neobydlených bytů (centrum Smíchova), SEN tam slabší. Nová výstavba 2011–2021 s výsledkem Pirátů nesouvisí.</p>
+      <p><b>Celá Praha po MČ.</b> V roce 2022 byli Piráti na magistrát silní hlavně ve vzdělaných MČ (r = ${nf(mk('vs', 'mag_2022').r, 2)}), v roce 2026 je vztah slabší (r = ${nf(mk('vs', 'mag_2026').r, 2)}). V nejvzdělanější třetině MČ klesli z ${pct(hi.mag_2022)} na ${pct(hi.mag_2026)}, v nejméně vzdělané z ${pct(lo.mag_2022)} na ${pct(lo.mag_2026)}. Relativně ztratili všude podobně (${nf((1 - lo.mag_2026 / lo.mag_2022) * 100, 0)} % a ${nf((1 - hi.mag_2026 / hi.mag_2022) * 100, 0)} %), ale náskok mezi vzdělanými voliči skoro zmizel. To sedí s přesunem k STAN a PRAHA SOBĚ, které oslovují stejné voliče.</p>
+      <p class="small">Metoda: 1km grid SLDB 2021 (ČSÚ, Statistický atlas) rozdělený do okrsků podle adresních bodů; vzdělání na úrovni okrsků v gridu není, proto je jen po MČ. Postup převzatý z projektu census-demografie-cz-sk; roční přepočet gridu tu nic nepřidá, protože Praha 5 má jeden koeficient růstu.</p>`;
+    const vys = ['mc_2026', 'mc_delta', 'ps_2025', 'ucast_2026', 'sen_2026', 'stan_2026', 'ano_2026', 'senat_sarapatka'];
+    const demos = [...new Set(CE.korelace_okrsky.map((x) => x.demo))];
+    const rcell = (x) => `<span class="${x.r >= 0.3 ? 'up' : x.r <= -0.3 ? 'down' : ''}">${x.fdr ? '<b>' : ''}${nf(x.r, 2)}${x.fdr ? '</b>' : ''}</span>`;
+    table($('#tb-demo-kor'), [
+      { k: 'demo_label', label: 'Demografie' },
+      ...vys.map((v) => ({ k: v, label: CE.korelace_okrsky.find((x) => x.vysledek === v).vysledek_label, n: 1, f: (r) => rcell(kr(r.demo, v)) })),
+    ], demos.map((d) => ({ demo: d, demo_label: CE.korelace_okrsky.find((x) => x.demo === d).demo_label })));
+    scatter($('#ch-demo-deti'), O.filter((o) => o.okrsek !== 5008 && o.cen_0_14 != null).map((o) => ({ x: o.cen_0_14, y: o.mc_2026, series: o.ctvrt === 'Barrandov' ? 'B' : 'O',
+      tip: `<b>Okrsek ${o.okrsek} · ${esc(o.ctvrt)}</b><br>děti 0–14: ${pct(o.cen_0_14)} · 65+: ${pct(o.cen_65)}<br>Piráti 2026: ${pct(o.mc_2026)} · SEN: ${pct(o.sen_2026)}` })),
+    { xl: 'podíl dětí 0–14 let (SLDB 2021, %)', yl: 'Piráti MČ 2026 (%)', series: [{ key: 'O', color: css('--s1') }, { key: 'B', color: css('--s2') }], fit: false });
+    const mcPts = CE.mc.flatMap((m) => [
+      { x: m.vs, y: m.mag_2022, series: '2022', tip: `<b>${esc(m.nazev)}</b><br>VŠ: ${pct(m.vs)}<br>Piráti 2022: ${pct(m.mag_2022)}` },
+      { x: m.vs, y: m.mag_2026, series: '2026', tip: `<b>${esc(m.nazev)}</b><br>VŠ: ${pct(m.vs)}<br>Piráti 2026: ${pct(m.mag_2026)}` },
+    ]);
+    const s2 = [{ key: '2022', color: css('--gray-mark') }, { key: '2026', color: css('--s1') }];
+    scatter($('#ch-demo-vs'), mcPts, { xl: 'vysokoškoláci 25+ (%)', yl: 'Piráti na magistrát (%)', series: s2, fit: true, zeroY: true });
+    $('#lg-demo-vs').innerHTML = '<span><span class="sw dot" style="background:' + css('--gray-mark') + '"></span>2022</span><span><span class="sw dot" style="background:' + css('--s1') + '"></span>2026</span><span class="muted">čára = lineární trend</span>';
+    table($('#tb-demo-terc'), [
+      { k: 'skupina', label: 'Třetina MČ' }, { k: 'vs', label: 'VŠ', n: 1, f: (r) => pct(r.vs) },
+      { k: 'mag_2022', label: 'Piráti 2022', n: 1, f: (r) => pct(r.mag_2022) }, { k: 'mag_2026', label: 'Piráti 2026', n: 1, f: (r) => `<b>${pct(r.mag_2026)}</b>` },
+      { k: 'rel', label: 'Relativní změna', n: 1, f: (r) => `<span class="down">−${nf((1 - r.mag_2026 / r.mag_2022) * 100, 0)} %</span>` },
+    ], T3);
+    table($('#tb-demo-mckor'), [
+      { k: 'demo_label', label: 'MČ: ukazatel' },
+      ...['mag_2022', 'mag_2026', 'mag_zmena', 'ps25'].map((v) => ({ k: v, label: CE.korelace_mc.find((x) => x.vysledek === v).vysledek_label, n: 1,
+        f: (r) => { const x = mk(r.demo, v); return `<span class="${x.p < 0.01 ? (x.r > 0 ? 'up' : 'down') : 'muted'}">${nf(x.r, 2)}</span>`; } })),
+    ], [...new Set(CE.korelace_mc.map((x) => x.demo))].map((d) => ({ demo: d, demo_label: CE.korelace_mc.find((x) => x.demo === d).demo_label })));
   }
 
   /* Senioři */

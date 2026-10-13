@@ -17,6 +17,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from jsonio import save  # noqa: E402
 from kvdata import Data, P5, MAG  # noqa: E402
+from mandaty import allocate, margins  # noqa: E402
 
 DL, OUT = sys.argv[1:3]
 rng = np.random.default_rng(2026)
@@ -34,8 +35,9 @@ ZAST = {P5: 'MČ Praha 5', MAG: 'magistrát'}
 nalezy = []
 
 
-def nalez(typ, o, kod, subjekt, detail, jistota, vliv='bez vlivu na mandáty'):
+def nalez(typ, o, kod, subjekt, detail, jistota, vliv='bez vlivu na mandáty', listina=None, korekce=None):
     nalezy.append(dict(typ=typ, okrsek=int(o), ctvrt=O[o]['ctvrt'], zastupitelstvo=ZAST[kod], subjekt=subjekt, detail=detail, jistota=jistota, vliv=vliv,
+                       listina=listina, korekce_hlasu=None if korekce is None else int(round(korekce)),
                        url=URL.format(o=o), json=URLJ.format(o=o)))
 
 
@@ -102,12 +104,12 @@ for kod in (P5, MAG):
                 continue
             for i, x in enumerate(v):
                 if x >= 6 * med and abs(x / 10 - med) < 0.6 * med:
-                    nalez('Překlep v hlasech kandidáta (vložená číslice)', o, kod, f'{names[p]}, kandidát č. {i + 1}', f'{int(x)} hlasů proti mediánu listiny {med:.0f}', 'vysoká', 'ovlivní pořadí preferenčních hlasů')
+                    nalez('Překlep v hlasech kandidáta (vložená číslice)', o, kod, f'{names[p]}, kandidát č. {i + 1}', f'{int(x)} hlasů proti mediánu listiny {med:.0f}', 'vysoká', 'ovlivní pořadí preferenčních hlasů', names[p], round(x / 10) - x)
                 elif 0 < x <= med / 6 and abs(x * 10 - med) < 0.6 * med:
-                    nalez('Překlep v hlasech kandidáta (vypadlá číslice)', o, kod, f'{names[p]}, kandidát č. {i + 1}', f'{int(x)} hlasů proti mediánu listiny {med:.0f}', 'vysoká', 'ovlivní pořadí preferenčních hlasů')
+                    nalez('Překlep v hlasech kandidáta (vypadlá číslice)', o, kod, f'{names[p]}, kandidát č. {i + 1}', f'{int(x)} hlasů proti mediánu listiny {med:.0f}', 'vysoká', 'ovlivní pořadí preferenčních hlasů', names[p], med - x)
             zeros = np.nonzero(v == 0)[0]
             if len(zeros) >= 2 and zeros[0] < n - 1 and np.all(v[zeros[0]:] == 0) and med >= 10:
-                nalez('Neúplně opsané řádky kandidátů', o, kod, names[p], f'kandidáti č. {zeros[0] + 1}–{n} mají 0 hlasů, předchozí kolem {med:.0f}', 'vysoká', 'ovlivní preferenční hlasy')
+                nalez('Neúplně opsané řádky kandidátů', o, kod, names[p], f'kandidáti č. {zeros[0] + 1}–{n} mají 0 hlasů, předchozí kolem {med:.0f}', 'vysoká', 'ovlivní preferenční hlasy', names[p], med * (n - zeros[0]))
 
 # Benford – 2. číslice hlasů stran v okrscích (hlasy ≥ 10)
 BEN2 = np.array([sum(math.log10(1 + 1 / (10 * k + d)) for k in range(1, 10)) for d in range(10)])
@@ -125,40 +127,6 @@ for kod in (P5, MAG):
                               pozorovano=[round(float(x) * 100, 1) for x in obs / len(d2)], ocekavano=[round(float(x) * 100, 1) for x in BEN2])
 
 # ---------------------------------------------------------------- 2) přepočet mandátů (všechny MČ + magistrát)
-def allocate(votes, ncands, seats):
-    """Mandáty podle zákona o volbách do zastupitelstev obcí: 5% klauzule s přepočtem pro neúplné kandidátky, D'Hondt, strop počtem kandidátů."""
-    adj = {p: (v / ncands[p] * seats if ncands[p] < seats else v) for p, v in votes.items()}
-    tot = sum(adj.values())
-    ok = [p for p in votes if tot and adj[p] / tot * 100 >= 5]
-    s = {p: 0 for p in votes}
-    q = sorted([(votes[p] / d, votes[p], p) for p in ok for d in range(1, seats + 1)], reverse=True)
-    for _, _, p in q:
-        if sum(s.values()) == seats:
-            break
-        if s[p] < ncands[p]:
-            s[p] += 1
-    return s
-
-
-def margins(votes, ncands, seats, party):
-    """Kolik hlasů navíc by straně dalo další mandát a o kolik hlasů mohla přijít bez ztráty mandátu (ostatní beze změny)."""
-    base = allocate(votes, ncands, seats)[party]
-
-    def with_(x):
-        v = dict(votes); v[party] = max(v[party] + x, 0)
-        return allocate(v, ncands, seats)[party]
-    lo, hi = 0, max(votes.values()) * 2
-    while hi - lo > 1:
-        mid = (lo + hi) // 2
-        lo, hi = (lo, mid) if with_(mid) > base else (mid, hi)
-    plus = hi
-    lo, hi = 0, votes[party] + 1
-    while hi - lo > 1:
-        mid = (lo + hi) // 2
-        lo, hi = (mid, hi) if with_(-mid) >= base else (lo, mid)
-    return base, plus, lo
-
-
 repro = []
 mar = []
 for kod in sorted(ros.KODZASTUP.unique()):

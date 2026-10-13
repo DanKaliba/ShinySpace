@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261013f').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261013g').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -382,6 +382,7 @@ function init(D) {
     { k: 'cen26_0_14', label: 'Děti 0–14 (2026)', br: [12, 14, 16, 18, 20], ramp: BLUE },
     { k: 'cen26_65', label: 'Senioři 65+ (2026)', br: [12, 14, 16, 18, 20], ramp: BLUE },
     { k: 'mc_minus_mag', label: 'Piráti MČ − magistrát', br: [-4, -2, -1, 0, 1], ramp: DIV, fmt: (v) => (v > 0 ? '+' : '') + nf(v, 0) },
+    { k: 'hledani_skore', label: '4. mandát: kde hledat', br: [100, 200, 300, 450, 600], ramp: ORANGE, get: (o) => ((D.hledani || {}).okrsky || []).find((r) => r.okrsek === o.okrsek)?.skore, fmt: (v) => v },
     { k: 'pedersen', label: 'Volatilita (Pedersen)', br: [10, 13, 16, 19, 22], ramp: ORANGE, fmt: (v) => v },
     { k: 'akce', label: 'Akce', br: [1, 3, 6, 10, 14], ramp: BLUE, get: (o) => o.akci_kampan_do_700m, fmt: (v) => v, unit: ' akcí do 700 m' },
   ];
@@ -761,6 +762,33 @@ function init(D) {
       { k: 'z', label: 'Hlasování' }, { k: 'n', label: 'Počet hodnot', n: 1, f: (r) => int(r.n) }, { k: 'chi2', label: 'χ²', n: 1, f: (r) => nf(r.chi2, 1) }, { k: 'p', label: 'p', n: 1, f: (r) => nf(r.p, 3) },
     ], Object.entries(F.benford).map(([z, v]) => ({ z, ...v })));
     $('#kon-benford-note').textContent = 'Benfordův test 2. číslice je jen hrubý ukazatel. V MČ (41 hlasů na voliče) data Benfordovu rozdělení odpovídají. Na magistrátu (65 hlasů na voliče) se od něj odchylují, to je ale u vícehlasých lístků očekávané: hlasy stran jsou přibližně násobky počtu lístků, a druhá číslice proto Benfordovo rozdělení mít nemusí. Nejde o známku manipulace; audit suchan.cz proto používá i další testy (Klimek, Kobak, Beber–Scacco), všechny v normě.';
+  }
+
+  /* Kde hledat hlasy na 4. mandát */
+  if (D.hledani) {
+    const HL = D.hledani, HR = HL.hrana, nm = (s) => esc(String(s).replace(/ s podporou.*/, ''));
+    const t5 = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+    const lastT = HL.posledni_cas ? new Date(HL.posledni_cas) : null;
+    $('#hl-tiles').innerHTML =
+      t5('Pirátům chybí na 4. mandát', `${int(HR.chybi_hlasu)} hlasů`, `≈ ${Math.ceil(HR.chybi_plnych_volicu)} voličů, kteří by dali Pirátům všech 41 hlasů`) +
+      t5('Pořadí podílů kolem 41. mandátu', `${int(HR.posledni.podil)}`, `${nm(HR.posledni.listina)} (${HR.posledni.mandat}. mandát) · pak ${HR.dalsi_v_poradi.slice(0, 2).map((d) => `${nm(d.listina)} ${int(d.podil)}`).join(', ')}`) +
+      t5('Kdyby SEN přišel o hlasy', `min. ${int(HR.minimum_pri_ztrate_sen)}`, `hlasů Pirátům navíc – mandát by nejdřív připadl ${nm(HR.dalsi_v_poradi[0].listina)}`) +
+      t5('Poslední sečtený okrsek', `${HL.posledni_okrsek}`, lastT ? `zpracován ${lastT.getDate()}. ${lastT.getMonth() + 1}. v ${lastT.toTimeString().slice(0, 5)}` : '');
+    const top = HL.okrsky.filter((r) => !r.zvlastni).slice(0, 6);
+    $('#hl-text').innerHTML = `<p>Na 4. mandát chybělo Pirátům ${int(HR.chybi_hlasu)} hlasů. Poslední mandát drží ${nm(HR.posledni.listina)} (${HR.posledni.mandat}.), těsně za ním je ${nm(HR.dalsi_v_poradi[0].listina)} (${HR.dalsi_v_poradi[0].mandat}. podíl) a teprve potom Piráti. Pokud by se našly hlasy navíc pro Piráty, stačí ${int(HR.chybi_hlasu)}; pokud by SEN o hlasy přišel, mandát by nejdřív připadl ${nm(HR.dalsi_v_poradi[0].listina)} a Piráti by stejně potřebovali aspoň ${int(HR.minimum_pri_ztrate_sen)}. Oprava chyb, které už jsme v protokolech našli (překlepy a neúplně opsané řádky u jiných kandidátek), by Pirátům potřebu zvýšila na ${int(HR.po_oprave_chyb)}.</p>
+      <p><b>Kde je největší šance najít chybu:</b> nejsilnějším signálem je rozdíl mezi pirátským výsledkem v MČ a na magistrátu ve stejném okrsku – volili stejní lidé ve stejný den, takže výrazně nižší výsledek v MČ může znamenat chybu při sčítání (například chybějící balík lístků). Dalšími signály jsou neplatné lístky nad průměr, pozdní zpracování a chyby nalezené kontrolou dat. Nejvýš vychází ${top.map((r) => `<b>${r.okrsek}</b> ${esc(r.ctvrt)}`).join(', ')}.</p>
+      <p><b>Co to není:</b> rozdíly mezi MČ a magistrátem jsou z velké části běžné – část lidí volí Piráty jen na magistrát. Seznam je pořadí, kde se vyplatí hledat, ne důkaz chyby nebo pochybení komise. Výsledek voleb může změnit jen soud na návrh podaný do 10 dnů od vyhlášení výsledků; postup je dobré ověřit s právníkem. Zápisy okrskových komisí uchovává úřad MČ.</p>`;
+    table($('#tb-hledani'), [
+      { k: 'poradi', label: '#', n: 1, f: (r) => r.poradi },
+      { k: 'okrsek', label: 'Okrsek', n: 1, f: (r) => `<b>${r.okrsek}</b><br><span class="muted">${esc(r.ctvrt)}</span>` },
+      { k: 'cas', label: 'Zpracováno', f: (r) => (r.cas ? new Date(r.cas).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–') },
+      { k: 'pir_mc', label: 'Piráti MČ / mag.', n: 1, f: (r) => `${pct(r.pir_mc)} / ${pct(r.pir_mag)}` },
+      { k: 'deficit', label: 'Chybí proti očekávání', n: 1, f: (r) => `<span class="${r.deficit > 150 ? 'down' : ''}">${int(r.deficit)}</span><br><span class="muted">${int(r.skutecnost)} z ${int(r.ocekavano)}</span>` },
+      { k: 'neplatne_mc', label: 'Neplatné MČ / mag.', n: 1, f: (r) => `${r.neplatne_mc} / ${r.neplatne_mag}` },
+      { k: 'duvody', label: 'Proč hledat', cls: 'wrap', sv: (r) => r.duvody.length, f: (r) => (r.duvody.length ? r.duvody.map(esc).join('<br>') : '<span class="muted">nic nápadného</span>') },
+      { k: 'skore', label: 'Skóre', n: 1, f: (r) => int(r.skore) },
+      { k: 'url', label: 'Protokol', f: (r) => `<a href="https://volby.gov.cz/app/kv2026/cs/20261009/results/!__0_1100_1100_500143___${r.okrsek}" target="_blank" rel="noopener">volby.gov.cz</a>` },
+    ], HL.okrsky, { sort: 'poradi', desc: false, onRow: (r) => { select(r.okrsek, true); $('#map-p5').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, rowClass: (r) => (r.poradi <= 6 ? 'hl' : '') });
   }
 
   /* Doplňující analýzy */

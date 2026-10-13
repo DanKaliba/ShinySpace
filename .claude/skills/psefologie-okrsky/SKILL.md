@@ -29,6 +29,12 @@ Vše jde jen s numpy + pandas (scipy/geopandas nejsou potřeba).
   CDX API `web.archive.org/cdx/search/cdx?url=…&from=2026`); spádové obvody ZŠ s polohou adres `spadovostpraha.cz/data/addresses/<rok>`
   + mapování obvod → škola v `__NEXT_DATA__` stránky `spadovostpraha.cz/<rok>`.
 
+- Demografie (SLDB 2021): Statistický atlas ČSÚ má veřejné ArcGIS služby `https://geodata.csu.gov.cz/server/rest/services/Hosted/<sluzba>/FeatureServer/<vrstva>/query`
+  (katalog vrstev: `geodata.csu.gov.cz/as/gpatlasapi/api/DatovaVrstvaAtlas`). Nejjemnější je 1km grid (vrstvy `…5948`: věk 0–14/15–64/65+,
+  byty, změna 2011→2021, vyjížďka) a ZÚJ = obce/MČ (vrstva `sldb2021_obyvatelstvo/…/10051`: vzdělání, věk, narození v zahraničí).
+  ZSJ ani okrsky v atlasu nejsou. Grid → okrsky dasymetricky přes adresní body (všechny adresy v buňce, i ze sousedních MČ);
+  ověř proti ZÚJ součtu. Roční přepočet gridu (projekt census-demografie-cz-sk) má jeden koeficient na MČ – uvnitř MČ nic nepřidá.
+
 ## 2. Nástrahy (všechny se už staly)
 
 1. **Počet mandátů ber z `kvrzcoco.MANDATY`, nikdy z hlavy.** Praha 5 má 41, ne 45. Volič má v KV tolik hlasů, kolik je mandátů

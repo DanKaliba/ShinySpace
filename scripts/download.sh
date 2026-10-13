@@ -29,4 +29,9 @@ for l in sldb2021_obyvatelstvo/FeatureServer/15948 byty/FeatureServer/25948 srov
 done
 curl -sSL -o census/p5_zuj.json "$B/sldb2021_obyvatelstvo/FeatureServer/10051/query?where=kod%3D%27500143%27&outFields=*&returnGeometry=false&f=json"
 curl -sSL -o census/praha_zuj.json "$B/sldb2021_obyvatelstvo/FeatureServer/10051/query?where=kod%20LIKE%20%275%25%27%20AND%20nazev%20LIKE%20%27Praha%25%27&outFields=*&returnGeometry=false&f=json"
+# ČSÚ DataStat: obyvatelé po MČ podle pohlaví a základních věkových skupin (31. 12.), po rocích kvůli limitu odpovědi
+mkdir -p csu
+for y in 2021 2025; do
+  curl -sSL -o "csu/oby02e_$y.csv" "https://data.csu.gov.cz/api/dotaz/v1/data/sady/OBY02E/vlastni?format=CSV&kodZvlast=true&kodCiselniku=true&CasRB.od=$y&CasRB.do=$y&UZ596H=*&POHL2=*&VekSkupZakl=*&IndicatorType=2406K2"
+done
 

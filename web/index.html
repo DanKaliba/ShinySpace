@@ -9,13 +9,13 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="top">
+<header class="top" id="top">
   <div class="wrap">
     <p class="eyebrow">Komunální volby 9.–10. 10. 2026 · Praha a Praha 5</p>
     <h1>Jak dopadli Piráti na Praze 5</h1>
     <p class="lede">Výsledky po všech 81 volebních okrscích Prahy 5: srovnání s komunálními volbami 2022 a sněmovními 2025, konkurence SENu a Starostů, senátní obvod 21 a&nbsp;co ukazují kampaňové akce.</p>
     <nav class="toc" aria-label="Obsah">
-      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#demografie">Demografie</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
+      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#demografie">Demografie</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#doplneni">Doplňky</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
     </nav>
   </div>
 </header>
@@ -215,6 +215,7 @@
       <div class="controls" id="sk-ctrl" role="radiogroup" aria-label="Území">
         <button role="radio" aria-checked="true" data-v="p5">Praha 5 – zastupitelstvo MČ</button>
         <button role="radio" aria-checked="false" data-v="praha">Praha – magistrát</button>
+        <button role="radio" aria-checked="false" data-v="ps5">PS 2025 → MČ 2026 (Praha 5)</button>
         <label style="margin-left:8px;font-size:14px"><input type="checkbox" id="sk-nev"> včetně lidí, kteří nevolili ani jednou</label>
       </div>
       <div id="ch-sankey"></div>
@@ -268,6 +269,56 @@
         <div class="tablewrap"><table class="data" id="tb-magk"></table></div>
       </figure>
     </div>
+  </section>
+
+  <section id="doplneni">
+    <h2>Doplňující analýzy</h2>
+    <p class="note">Body z „Co v analýze chybí“, které šlo udělat z veřejných dat. Rychlé odkazy: <a href="#d-vek">věk a pohlaví 2026</a> · <a href="#d-split">MČ × magistrát</a> · <a href="#d-pref">preference na magistrát</a> · <a href="#d-ucast">účast</a> · <a href="#d-vystavba">nová výstavba</a> · <a href="#d-mc">srovnání MČ</a> · <a href="#d-mandaty">Monte Carlo mandátů</a> · <a href="#d-ei">varianty odhadu přesunů</a>. Přesuny ze sněmovních voleb 2025 jsou v <a href="#psefologie">Sankey diagramu</a>.</p>
+
+    <h3 id="d-vek">Věk a pohlaví v roce 2026</h3>
+    <div id="d-vek-text" class="prose"></div>
+    <figure class="card"><figcaption>Pražské MČ: složení obyvatel k 1. 1. 2026 a Piráti na magistrát</figcaption>
+      <div class="tablewrap tall"><table class="data sortable" id="tb-d-vek"></table></div></figure>
+
+    <h3 id="d-split">Stejní voliči, dvě hlasování: MČ × magistrát</h3>
+    <div id="d-split-text" class="prose"></div>
+    <div class="grid2">
+      <figure class="card"><figcaption>Voliči pirátské magistrátní kandidátky → volba v MČ (odhad)</figcaption><div class="tablewrap"><table class="data" id="tb-d-split"></table></div></figure>
+      <figure class="card"><figcaption>Piráti v MČ minus Piráti na magistrát podle čtvrtí (p. b.)</figcaption><div id="ch-d-split"></div></figure>
+    </div>
+
+    <h3 id="d-pref">Preferenční hlasy pirátské magistrátní kandidátky v Praze 5</h3>
+    <figure class="card"><figcaption>Index čtvrti (100 = průměr Prahy 5), prvních 15 kandidátů</figcaption>
+      <div class="tablewrap"><table class="data sortable" id="tb-d-pref"></table></div></figure>
+
+    <h3 id="d-ucast">Účast: kdo získal nové voliče</h3>
+    <div id="d-ucast-text" class="prose"></div>
+    <div class="grid2">
+      <figure class="card"><figcaption>Nevoliči 2022, kteří v roce 2026 přišli (odhad)</figcaption><div class="tablewrap"><table class="data" id="tb-d-nevol"></table></div></figure>
+      <figure class="card"><figcaption>Okrsky: změna účasti × změna stran 2022 → 2026 (r)</figcaption><div class="tablewrap"><table class="data" id="tb-d-ucastkor"></table></div></figure>
+    </div>
+
+    <h3 id="d-vystavba">Nová výstavba</h3>
+    <div id="d-vystavba-text" class="prose"></div>
+    <figure class="card"><figcaption>10 okrsků Prahy 5 s největším přírůstkem voličů 2022 → 2026</figcaption>
+      <div class="tablewrap"><table class="data" id="tb-d-vystavba"></table></div></figure>
+
+    <h3 id="d-mc">Je Praha 5 výjimka? Srovnání s ostatními MČ</h3>
+    <div id="d-mc-text" class="prose"></div>
+    <div class="grid2">
+      <figure class="card"><figcaption>MČ, kde Piráti kandidovali samostatně 2022 i 2026: relativní změna MČ × magistrát</figcaption><div id="ch-d-mc"></div></figure>
+      <figure class="card"><figcaption>Pořadí MČ podle relativní změny pirátské listiny</figcaption><div class="tablewrap tall"><table class="data" id="tb-d-mc"></table></div></figure>
+    </div>
+
+    <h3 id="d-mandaty">Monte Carlo mandátů</h3>
+    <div id="d-mandaty-text" class="prose"></div>
+    <figure class="card"><figcaption>Pravděpodobnost počtu mandátů Pirátů a SEN v simulacích (2 000 běhů)</figcaption>
+      <div class="tablewrap"><table class="data" id="tb-d-mc-sim"></table></div></figure>
+
+    <h3 id="d-ei">Varianty odhadu přesunů: Goodman × IPF po okrscích</h3>
+    <div id="d-ei-text" class="prose"></div>
+    <figure class="card"><figcaption>Kam odešli voliči Pirátů z roku 2022: dvě metody</figcaption>
+      <div class="tablewrap"><table class="data" id="tb-d-ei"></table></div></figure>
   </section>
 
   <section id="dalsi" class="prose">

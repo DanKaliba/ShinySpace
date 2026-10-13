@@ -199,12 +199,13 @@ function sankey(container, { cats, catsR, size, M, nonvoters = false }) {
     const pir = /^Piráti/.test(src) || /^Piráti/.test(tgt);
     const p = el('path', { d: `M${x0 + NW},${ys} C${mx},${ys} ${mx},${yt} ${x1},${yt} L${x1},${yt + h} C${mx},${yt + h} ${mx},${ys + h} ${x0 + NW},${ys + h} Z`,
       fill: catColor(src), 'fill-opacity': pir ? 0.55 : 0.22 }, links);
-    hover(p, `<b>${esc(src)} → ${esc(tgt)}</b><br>≈ ${int(v)} voličů<br>${nf(v / Lt[a] * 100, 0)} % voličů ${esc(src)}`);
+    hover(p, `<b>${esc(src)} → ${esc(tgt)}</b><br>≈ ${int(v)} voličů<br>${nf(v / Lt[a] * 100, 0)} % voličů ${esc(src)}${tgt === 'Nevoliči' || src === 'Nevoliči' ? '<br><i>toky z/do nevoličů jsou nejméně jistý odhad</i>' : ''}`);
   }));
   const node = (x, yy, h, c, n, left) => {
+    if (n < 1) return; // prázdný uzel (např. nevoliči bez toků) nekreslit
     el('rect', { x, y: yy, width: NW, height: Math.max(1, h), rx: 2, fill: catColor(c) }, s);
     const t = el('text', { x: left ? x - 6 : x + NW + 6, y: yy + Math.max(h, 12) / 2 + 4, 'text-anchor': left ? 'end' : 'start', class: 'lbl' }, s);
-    t.textContent = `${c} · ${int(n)}`;
+    t.textContent = `${c === 'Nevoliči' ? (left ? 'Nevolili (dříve)' : 'Nevolili (nyní)') : c} · ${int(n)}`;
     if (/^Piráti/.test(c)) t.setAttribute('font-weight', '650');
   };
   idx.forEach((i, a) => node(x0, ly[a], Lt[a] * k, cats[i], Lt[a], true));
@@ -599,18 +600,26 @@ function init(D) {
   ], PS.ei.pirati_2022_kam);
   if (RZ.sankey_p5) {
     let skView = 'p5';
+    // vysvětlivka pod Sankey: metoda, Piráti s intervaly, co znamená uzel nevoličů
+    const skNote = (q, intro, odkdy) => {
+      const rows = q.pirati_kam_shrink || q.pirati_kam;
+      const nev = rows.find((r) => r.kam === 'Nevoliči');
+      const lam = q.lambda_;
+      return `<p>${intro} Voliči Pirátů (${odkdy}): ${rows.filter((r) => r.pct >= 1).map((r) => `${esc(r.kam === 'Nevoliči' ? 'nepřišli' : r.kam)} ${nf(r.pct, 0)} %${r.p05 != null ? ` (${nf(r.p05, 0)}–${nf(r.p95, 0)})` : ''}`).join(', ')}.</p>
+        <p><b>Uzel „Nevolili (nyní)“</b> = odhad lidí, kteří ${odkdy === '2022' ? 'v roce 2022' : 've sněmovních volbách 2025'} volili a letos ne. Z okrskových součtů jde spolehlivě určit jen <i>čistý</i> pohyb – kolik lidí přibylo nebo ubylo. Skutečná výměna voličů (část lidí odešla, jiní místo nich přišli) je větší a model ji vidí jen částečně.${nev ? ` U Pirátů je odhad odchodu k nevoličům ${nf(nev.pct, 0)} % (bootstrap ${nf(nev.p05, 0)}–${nf(nev.p95, 0)} %)${(q.citlivost || []).length ? `; když model mírně „smrštíme“ k neutrálnímu výchozímu bodu, vyjde ${q.citlivost.map((c) => `${nf(c.do_nevolicu['Piráti'], 0)} % (přesnost horší o ${nf(c.cv_horsi_o, 0)} %)`).join(' a ')}. Data tedy připouštějí zhruba ${nf(Math.min(nev.pct, ...q.citlivost.map((c) => c.do_nevolicu['Piráti'])), 0)}–${nf(Math.max(nev.p95, ...q.citlivost.map((c) => c.do_nevolicu['Piráti'])), 0)} % a přesně to nerozliší` : ''}.` : ''}</p>
+        <p class="small">${lam != null ? (lam > 0 ? `Metoda: Goodmanova regrese se smrštěním k neutrálnímu výchozímu bodu (síla λ = ${String(lam).replace('.', ',')} zvolená křížovou validací přes okrsky).` : 'Metoda: Goodmanova regrese. Smrštění k neutrálnímu výchozímu bodu jsme testovali křížovou validací přes okrsky; nezvolila ho (každé smrštění zhoršuje předpověď vynechaných okrsků). Nuly u toků do nevoličů proto nejsou přeučení, ale znamenají, že tyto toky data neurčují – proto citlivostní rozpětí výše.') : ''} Tloušťka pruhu = odhadovaný počet voličů; jde o odhad z agregátů okrsků, ne o data o jednotlivcích.</p>`;
+    };
     const drawSk = () => {
       const DP = (D.doplneni || {}).ps25_kv26;
       if ((skView === 'ps5' || skView === 'psp') && DP) {
         const q = skView === 'ps5' ? DP.p5 : DP.praha;
-        sankey($('#ch-sankey'), { cats: q.kategorie_ps, catsR: q.kategorie_kv, size: q.velikost_ps, M: q.matice, nonvoters: $('#sk-nev').checked });
-        $('#sk-note').innerHTML = `Sněmovní volby 2025 → ${skView === 'ps5' ? 'zastupitelstvo Prahy 5' : 'magistrát'} 2026, ${int(q.okrsku)} okrsků. Voliči Pirátů z PS 2025: ${q.pirati_kam.filter((r) => r.pct >= 1).map((r) => `${esc(r.kam)} ${nf(r.pct, 0)} %${r.p05 != null ? ` (${nf(r.p05, 0)}–${nf(r.p95, 0)})` : ''}`).join(', ')}. Účast ve sněmovních volbách byla mnohem vyšší, proto velký tok do nevoličů. Odhad mezi různými typy voleb je méně spolehlivý než mezi dvěma komunálními volbami.`;
+        sankey($('#ch-sankey'), { cats: q.kategorie_ps, catsR: q.kategorie_kv, size: q.velikost_ps, M: q.matice_shrink || q.matice, nonvoters: $('#sk-nev').checked });
+        $('#sk-note').innerHTML = skNote(q, `Sněmovní volby 2025 → zastupitelstvo Prahy 5 2026, ${int(q.okrsku)} okrsků. Účast ve sněmovních volbách byla mnohem vyšší, proto velký tok do nevoličů; odhad mezi různými typy voleb je méně spolehlivý než mezi dvěma komunálními volbami.`, 'PS 2025');
         return;
       }
       const sk = skView === 'p5' ? RZ.sankey_p5 : RZ.sankey_praha;
-      sankey($('#ch-sankey'), { cats: sk.kategorie, size: sk.velikost_2022, M: sk.matice, nonvoters: $('#sk-nev').checked });
-      const pk = skView === 'praha' ? RZ.sankey_praha.pirati_kam : PS.ei.pirati_2022_kam;
-      $('#sk-note').innerHTML = `${skView === 'p5' ? `Praha 5, zastupitelstvo MČ, ${sk.okrsku} okrsků.` : `Celá Praha, zastupitelstvo hl. m. Prahy, ${int(sk.okrsku)} okrsků se stabilními hranicemi.`} Voliči Pirátů z roku 2022: ${pk.filter((r) => r.pct >= 1).map((r) => `${esc(r.kam)} ${nf(r.pct, 0)} % (${nf(r.p05, 0)}–${nf(r.p95, 0)})`).join(', ')}. Tloušťka pruhu = odhadovaný počet voličů; jde o odhad z agregátů okrsků, ne o data o jednotlivcích.`;
+      sankey($('#ch-sankey'), { cats: sk.kategorie, size: sk.velikost_2022, M: sk.matice_shrink || sk.matice, nonvoters: $('#sk-nev').checked });
+      $('#sk-note').innerHTML = skNote(sk, skView === 'p5' ? `Praha 5, zastupitelstvo MČ, ${sk.okrsku} okrsků.` : `Celá Praha, zastupitelstvo hl. m. Prahy, ${int(sk.okrsku)} okrsků se stabilními hranicemi.`, '2022');
     };
     $('#sk-ctrl').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
       $('#sk-ctrl').querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', 'false'));

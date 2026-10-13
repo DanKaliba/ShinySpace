@@ -102,7 +102,7 @@ function dumbbellSvg(container, rows, { la = '2022', lb = '2026', max, extraLabe
 /* Horizontální sloupce: rows [{label, v, hi, note}] */
 function bars(container, rows, opts = {}) {
   barsSvg(container, rows, opts);
-  if (!opts.noTable) tableToggle(container, ['', 'hodnota'], rows.map((r) => [r.label, nf(r.v, opts.d ?? 1) + (opts.unit ?? ' %')]));
+  if (!opts.noTable) tableToggle(container, ['', 'hodnota'], rows.map((r) => [r.label, r.txt ?? nf(r.v, opts.d ?? 1) + (opts.unit ?? ' %')]));
 }
 function barsSvg(container, rows, { max, unit = ' %', d = 1 } = {}) {
   const W = Math.max(280, Math.min(560, container.clientWidth || 560)), rowH = W < 400 ? 22 : 30, L = Math.min(200, Math.round(W * 0.42)), R = 56, T = 6;
@@ -118,7 +118,7 @@ function barsSvg(container, rows, { max, unit = ' %', d = 1 } = {}) {
     t.textContent = r.label; if (r.hi) t.setAttribute('font-weight', '650');
     const w = Math.max(2, x(r.v));
     el('path', { d: `M${L},${y + 5} h${w - 4} a4,4 0 0 1 4,4 v${rowH - 18} a4,4 0 0 1 -4,4 h${-(w - 4)} z`, fill: r.color || (r.hi ? css('--ink') : css('--gray-mark')) }, g);
-    el('text', { x: L + w + 6, y: y + rowH / 2 + 4, class: 'lbl' }, g).textContent = nf(r.v, d) + unit;
+    el('text', { x: L + w + 6, y: y + rowH / 2 + 4, class: 'lbl' }, g).textContent = r.txt ?? nf(r.v, d) + unit;
     hover(g, `<b>${esc(r.label)}</b><br>${nf(r.v, 2)}${unit}${r.note ? '<br>' + r.note : ''}`);
   });
 }
@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261013c').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261013d').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -782,8 +782,8 @@ function init(D) {
       { k: 'kam', label: 'Volba v MČ' }, { k: 'pct', label: 'Odhad', n: 1, f: (r) => `<b>${nf(r.pct, 0)} %</b>` },
       { k: 'i', label: '90% interval', n: 1, f: (r) => `${nf(r.p05, 0)}–${nf(r.p95, 0)} %` },
     ], SP.pirati_mag_kam);
-    bars($('#ch-d-split'), Object.entries(SP.rozdil.ctvrti).sort((a, b) => b[1] - a[1]).map(([c, v]) => ({ label: c, v: Math.abs(v), color: v >= 0 ? css('--s1') : css('--s8'), note: `${pp(v)}` })), { unit: ' p. b.' });
-    $('#ch-d-split').insertAdjacentHTML('beforeend', '<p class="small">Délka = velikost rozdílu; modře MČ nad magistrátem, červeně pod ním.</p>');
+    bars($('#ch-d-split'), Object.entries(SP.rozdil.ctvrti).sort((a, b) => b[1] - a[1]).map(([c, v]) => ({ label: c, v: Math.abs(v), txt: pp(v), color: v >= 0 ? css('--s1') : css('--s8'), note: `${pp(v)}` })), { unit: ' p. b.' });
+    $('#ch-d-split').insertAdjacentHTML('beforeend', '<p class="small">Délka = velikost rozdílu; červeně = Piráti v MČ níž než na magistrátu (ve všech čtvrtích). Část rozdílu dělají místní konkurenti, kteří na magistrátu nekandidují nebo jsou slabí (SEN PRO PRAHU 5, PRAHA 5 SOBĚ). V roce 2022 byl rozdíl za celou Prahu 5 −7,5 p. b., letos −1,7 p. b.</p>');
 
     const CTS2 = Object.keys(DP.pref_magistrat[0].index_ctvrti);
     table($('#tb-d-pref'), [

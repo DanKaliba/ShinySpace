@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261013d').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261013e').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -782,8 +782,11 @@ function init(D) {
       { k: 'kam', label: 'Volba v MČ' }, { k: 'pct', label: 'Odhad', n: 1, f: (r) => `<b>${nf(r.pct, 0)} %</b>` },
       { k: 'i', label: '90% interval', n: 1, f: (r) => `${nf(r.p05, 0)}–${nf(r.p95, 0)} %` },
     ], SP.pirati_mag_kam);
-    bars($('#ch-d-split'), Object.entries(SP.rozdil.ctvrti).sort((a, b) => b[1] - a[1]).map(([c, v]) => ({ label: c, v: Math.abs(v), txt: pp(v), color: v >= 0 ? css('--s1') : css('--s8'), note: `${pp(v)}` })), { unit: ' p. b.' });
-    $('#ch-d-split').insertAdjacentHTML('beforeend', '<p class="small">Délka = velikost rozdílu; červeně = Piráti v MČ níž než na magistrátu (ve všech čtvrtích). Část rozdílu dělají místní konkurenti, kteří na magistrátu nekandidují nebo jsou slabí (SEN PRO PRAHU 5, PRAHA 5 SOBĚ). V roce 2022 byl rozdíl za celou Prahu 5 −7,5 p. b., letos −1,7 p. b.</p>');
+    const pomer = D.ctvrti.map((c) => ({ label: c.ctvrt, a: c.mc_2022 / c.mag_2022 * 100, b: c.mc_2026 / c.mag_2026 * 100, hi: true,
+      tipx: `<br>MČ ${pct(c.mc_2022)} → ${pct(c.mc_2026)}<br>magistrát ${pct(c.mag_2022)} → ${pct(c.mag_2026)}` })).sort((x, y) => y.b - x.b);
+    pomer.push({ label: 'Praha 5 celkem', a: P.mc_2022 / P.mag_2022 * 100, b: P.mc_2026 / P.mag_2026 * 100, hi: true, tipx: `<br>MČ ${pct(P.mc_2022)} → ${pct(P.mc_2026)}<br>magistrát ${pct(P.mag_2022)} → ${pct(P.mag_2026)}` });
+    dumbbell($('#ch-d-split'), pomer, { la: '2022', lb: '2026', max: 100 });
+    $('#ch-d-split').insertAdjacentHTML('beforeend', `<p class="small">100 % = Piráti mají v MČ stejný podíl jako na magistrátu. V roce 2022 měla místní kandidátka ${nf(P.mc_2022 / P.mag_2022 * 100, 0)} % magistrátního výsledku, letos ${nf(P.mc_2026 / P.mag_2026 * 100, 0)} %. Zlepšení je hlavně tím, že magistrátní kandidátka propadla víc (−${nf((1 - P.mag_2026 / P.mag_2022) * 100, 0)} %) než místní (−${nf((1 - P.mc_2026 / P.mc_2022) * 100, 0)} %). Část rozdílu dělají místní konkurenti, kteří na magistrátu nejsou nebo jsou slabí (SEN PRO PRAHU 5, PRAHA 5 SOBĚ).</p>`);
 
     const CTS2 = Object.keys(DP.pref_magistrat[0].index_ctvrti);
     table($('#tb-d-pref'), [

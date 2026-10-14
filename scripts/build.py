@@ -517,6 +517,7 @@ for o, r in rows.items():
     r['akci_do_700m'] = sum(1 for d in ds if d <= 0.7)
     r['akci_kampan_do_700m'] = sum(1 for d, e in zip(ds, anchored) if d <= 0.7 and e['datum'] >= '2026-09-01')
     r['vzdalenost_akce_km'] = round(min(ds), 2) if ds else None
+    r['akci_v_okrsku'] = sum(1 for e in anchored if e['okrsek'] == o)
     for k in ('mc', 'mag'):
         if r.get(f'{k}_2026') is not None and r.get(f'{k}_2022') is not None:
             r[f'{k}_delta'] = round(r[f'{k}_2026'] - r[f'{k}_2022'], 2)
@@ -560,6 +561,18 @@ stats['skupiny'] = [dict(skupina=k, okrsku=int(len(v)), mc_2022=round(float((v.m
                          mc_2026=round(float((v.mc_2026 * v.odevzdano_2026).sum() / v.odevzdano_2026.sum()), 2),
                          ps_2025=round(float(v.ps_2025.mean()), 2), ucast_delta=round(float(v.ucast_delta.mean()), 2))
                     for k, v in g.groupby('grp')]
+# MČ × magistrát: stejní voliči, stejný den – rozdíl změn ukazuje místní (pětkový) efekt očištěný od celopražského trendu
+df['mc_mag_zmena'] = df.mc_delta - df.mag_delta
+s_ak = df.akci_v_okrsku >= 1
+d_obs = float(df.mc_mag_zmena[s_ak].mean() - df.mc_mag_zmena[~s_ak].mean())
+prng = np.random.default_rng(2026)
+perm = np.array([(lambda m: df.mc_mag_zmena.values[m].mean() - df.mc_mag_zmena.values[~m].mean())(prng.permutation(s_ak.values)) for _ in range(20000)])
+stats['mc_vs_mag_akce'] = dict(
+    s_akci=dict(okrsku=int(s_ak.sum()), median=round(float(df.mc_mag_zmena[s_ak].median()), 2), mc_delta=round(float(df.mc_delta[s_ak].median()), 2)),
+    bez_akci=dict(okrsku=int((~s_ak).sum()), median=round(float(df.mc_mag_zmena[~s_ak].median()), 2), mc_delta=round(float(df.mc_delta[~s_ak].median()), 2)),
+    rozdil_prumeru=round(d_obs, 2), p=round(float((np.abs(perm) >= abs(d_obs)).mean()), 3),
+    r_kampan_700m=round(float(df.akci_kampan_do_700m.corr(df.mc_mag_zmena)), 3),
+    mc_delta_median=round(float(df.mc_delta.median()), 2), mag_delta_median=round(float(df.mag_delta.median()), 2))
 out['stats'] = stats
 
 # ---------------------------------------------------------------- souhrn Praha 5

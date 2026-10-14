@@ -6,7 +6,7 @@
 <title>Piráti Praha 5 – volby 2026</title>
 <meta name="description" content="Analýza výsledků Pirátů v komunálních volbách 2026 v Praze a na Praze 5 po volebních okrscích, srovnání s rokem 2022 a sněmovními volbami 2025, senát a kampaňové akce.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=20261014a">
+<link rel="stylesheet" href="style.css?v=20261014c">
 </head>
 <body>
 <header class="top" id="top">
@@ -173,6 +173,12 @@
     <figure class="card">
       <figcaption>Okrsky podle intenzity akcí v okolí (do 700 m, září–říjen)</figcaption>
       <div class="tablewrap"><table class="data" id="tb-skupiny"></table></div>
+    </figure>
+    <div id="akce-mag" class="prose"></div>
+    <figure class="card">
+      <figcaption>Okrsky, kde akce přímo byly: změna Pirátů v MČ a na magistrátu (stejní voliči, stejný den)</figcaption>
+      <div class="tablewrap"><table class="data sortable" id="tb-akce-okrsky"></table></div>
+      <p class="small">Místní efekt = změna v MČ − změna na magistrátu (p. b.). Kladná hodnota znamená, že pětková kandidátka ztratila méně než magistrátní; celopražský propad značky se tím odečte. Malé okrsky (pod 200 odevzdaných obálek) kolísají o několik bodů náhodně.</p>
     </figure>
     <details class="card">
       <summary>Seznam všech akcí z kalendáře</summary>
@@ -366,6 +372,6 @@
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="app.js?v=20261014a"></script>
+<script src="app.js?v=20261014c"></script>
 </body>
 </html>

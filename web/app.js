@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261014a').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261014c').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -560,7 +560,7 @@ function init(D) {
   const noCt = pub.filter((a) => !a.ctvrt).length, noAnc = pub.filter((a) => !a.okrsek).length;
   const g = S.skupiny.reduce((m, x) => ((m[x.skupina] = x), m), {});
   const gh = g['hodně akcí (≥3)'], g0 = g['žádná akce'];
-  $('#akce-text').innerHTML = `<p>V kalendáři je ${pub.length} veřejných akcí v roce 2026 (bez interních schůzí): ${TYPES.map((t) => `${t.toLowerCase()} ${pub.filter((a) => a.typ === t).length}×`).join(', ')}. ${noCt} akcí nemá čtvrť a ${noAnc} nešlo přiřadit ke konkrétnímu okrsku, například „u Alberta“ na Malvazinkách nebo „U Zvonu“ v Košířích.</p>
+  $('#akce-text').innerHTML = `<p>V kalendáři je ${pub.length} veřejných akcí v roce 2026 (bez interních schůzí): ${TYPES.map((t) => `${t.toLowerCase()} ${pub.filter((a) => a.typ === t).length}×`).join(', ')}. ${noCt} akcí nemá čtvrť a ${noAnc} nešlo přiřadit ke konkrétnímu okrsku (debaty a stánky bez uvedeného místa a plošné roznosy do schránek).</p>
     <p><b>Co z dat plyne:</b> akce se soustředily tam, kde byli Piráti už v roce 2022 silnější. Okrsky s 3 a více akcemi v okolí měly v roce 2022 průměrně ${pct(gh.mc_2022)}, okrsky bez akcí ${pct(g0.mc_2022)}. V roce 2026 je pořadí stejné (${pct(gh.mc_2026)} proti ${pct(g0.mc_2026)}), jenže relativní ztráta je v obou skupinách podobná (${nf((1 - gh.mc_2026 / gh.mc_2022) * 100, 0)} % proti ${nf((1 - g0.mc_2026 / g0.mc_2022) * 100, 0)} %). Okrsková data tedy nenaznačují, že by akce pokles brzdily. Nedokazují ale ani opak: stánky na Andělu nebo u metra oslovují hlavně lidi, kteří tam jen projíždějí, a o volbě se podle povolebních průzkumů velká část pirátských voličů rozhoduje až v posledním týdnu.</p>`;
   // týdny
   const monday = (s) => { const d = new Date(s + 'T12:00:00'); const w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return d; };
@@ -583,6 +583,22 @@ function init(D) {
     { k: 'rel', label: 'Relativní změna', n: 1, f: (r) => `<span class="down">−${nf((1 - r.mc_2026 / r.mc_2022) * 100, 0)} %</span>` },
     { k: 'ps_2025', label: 'PS 2025 (průměr)', n: 1, f: (r) => pct(r.ps_2025) }, { k: 'ucast_delta', label: 'Změna účasti', n: 1, f: (r) => pp(r.ucast_delta) },
   ], ['hodně akcí (≥3)', 'pár akcí (1–2)', 'žádná akce'].map((k) => g[k]));
+  const MA = S.mc_vs_mag_akce, mz = (o) => o.mc_delta - o.mag_delta, sgn = (v) => `<span class="${sgnCls(v)}">${pp(v)}</span>`;
+  const akO = O.filter((o) => o.akci_v_okrsku > 0), oo = (k) => O.find((o) => o.okrsek === k);
+  const arb = oo(5004), and = oo(5011), zv = oo(5057), zv2 = oo(5056);
+  const zs = O.map(mz).sort((x, y) => y - x), medZ = (zs[(zs.length - 1) >> 1] + zs[zs.length >> 1]) / 2, rank = (o) => zs.indexOf(mz(o)) + 1;
+  $('#akce-mag').innerHTML = `<p><b>Čistší srovnání: MČ proti magistrátu.</b> Ve stejném okrsku volí stejní lidé ve stejný den dvakrát: do MČ a na magistrát. Pětková kampaň by se proto měla projevit hlavně v tom, o kolik méně ztratila kandidátka do MČ než magistrátní. Celopražský propad značky se tím odečte. Okrsky, kde akce přímo byly (${MA.s_akci.okrsku}), mají tento místní efekt ${pp(MA.s_akci.median)} (medián), okrsky bez akce (${MA.bez_akci.okrsku}) ${pp(MA.bez_akci.median)}; rozdíl není průkazný (permutační test p = ${nf(MA.p, 2)}) a s počtem akcí v okolí 700 m nesouvisí (r = ${nf(MA.r_kampan_700m, 2).replace('-', '−')}). Okrsky s akcemi navíc ztratily v MČ o něco víc (medián ${pp(MA.s_akci.mc_delta)} proti ${pp(MA.bez_akci.mc_delta)}), protože akce byly hlavně tam, kde byli Piráti v roce 2022 silní.</p>
+    <p><b>Jednotlivá místa:</b> na Arbesově náměstí (okrsek 5004, ${arb.akci_v_okrsku} akcí včetně smíchovských SWAPů) Piráti v MČ téměř neztratili (${pct(arb.mc_2022)} → ${pct(arb.mc_2026)}), přestože na magistrátu tam stejní voliči ubrali ${pp(arb.mag_delta).replace('−', '')}; místní efekt ${pp(mz(arb))} je ${rank(arb)}. nejvyšší z ${O.length} okrsků (typická hodnota ${pp(medZ)}), okrsek je ale malý (${arb.odevzdano_2026} obálek). U Anděla (5011, ${and.akci_v_okrsku} akcí) je místní efekt jen ${pp(mz(and))}, tedy pod typickou hodnotou – stánek u metra oslovuje hlavně lidi, kteří tam jen projíždějí. U Zvonu (5057) Piráti vyrostli z ${pct(zv.mc_2022)} na ${pct(zv.mc_2026)}, ale rostli tam i na magistrátu (${pp(zv.mag_delta)}), takže místní efekt (${pp(mz(zv))}) je běžný (sousední 5056 ve stejné volební místnosti navíc v MČ spadl o ${pp(zv2.mc_delta).replace('−', '')}). Jednotlivá místa jsou tip, kde akce mohly fungovat; statisticky se od náhody odlišit nedají.</p>`;
+  table($('#tb-akce-okrsky'), [
+    { k: 'okrsek', label: 'Okrsek', n: 1, f: (r) => `<b>${r.okrsek}</b><br><span class="muted">${esc(r.ctvrt)}</span>` },
+    { k: 'akci_v_okrsku', label: 'Akcí v okrsku', n: 1, f: (r) => r.akci_v_okrsku },
+    { k: 'mista', label: 'Místa', cls: 'wrap', sv: (r) => r.akci_v_okrsku, f: (r) => esc([...new Set(pub.filter((a) => a.okrsek === r.okrsek).map((a) => a.misto).filter(Boolean))].slice(0, 3).join(', ') || '–') },
+    { k: 'mc', label: 'Piráti MČ 2022 → 2026', n: 1, sv: (r) => r.mc_2026, f: (r) => `${pct(r.mc_2022)} → ${pct(r.mc_2026)}` },
+    { k: 'mc_delta', label: 'Změna MČ', n: 1, f: (r) => sgn(r.mc_delta) },
+    { k: 'mag_delta', label: 'Změna magistrát', n: 1, f: (r) => sgn(r.mag_delta) },
+    { k: 'mz', label: 'Místní efekt', n: 1, sv: mz, f: (r) => `<b>${sgn(mz(r))}</b>` },
+    { k: 'odevzdano_2026', label: 'Obálek 2026', n: 1, f: (r) => int(r.odevzdano_2026) },
+  ], akO, { sort: 'akci_v_okrsku', desc: true, onRow: (r) => { select(r.okrsek, true); $('#map-p5').scrollIntoView({ behavior: 'smooth', block: 'center' }); } });
   table($('#tb-akce'), [
     { k: 'datum', label: 'Datum', f: (r) => new Date(r.datum + 'T12:00:00').toLocaleDateString('cs-CZ') },
     { k: 'typ', label: 'Typ' }, { k: 'ctvrt', label: 'Čtvrť', f: (r) => esc(r.ctvrt || '–') }, { k: 'misto', label: 'Místo', f: (r) => esc(r.misto || '–') },

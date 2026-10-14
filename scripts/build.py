@@ -354,7 +354,7 @@ for e in events:
             ORGANIZERS.add(nxt)
 # místo se ponechá jen tehdy, když vypadá jako místo (adresa s číslem nebo známé místní slovo);
 # cokoli jiného (typicky jméno organizátora bez iniciály) se zahodí
-PLACE_OK = re.compile(r'\d|Prague|Praha|náměst|nám\.|park|metro|albert|zvon|vinici|louk|sady|centrum|kavalír|klamovk|knížecí|anděl|arbes|škola|chaplin|tilleho|trnkov|walter|laurov|křížov|tenis|filipa|pláni', re.I)
+PLACE_OK = re.compile(r'\d|Prague|Praha|náměst|nám\.|park|metro|albert|zvon|vinici|miroslav|peroutkov|louk|sady|centrum|kavalír|klamovk|knížecí|anděl|arbes|škola|chaplin|tilleho|trnkov|walter|laurov|křížov|tenis|filipa|pláni', re.I)
 for e in events:
     if e['place'] and (e['place'] in ORGANIZERS or not PLACE_OK.search(e['place'])):
         e['place'] = None
@@ -398,7 +398,12 @@ ANCHOR = [
     ('Anděl', 5011), ('Knížecí', 5016), ('Nádražní', 5010), ('Kavalír', 5049), ('Klamovk', 5050), ('Husov', 5030),
     ('U Tenisu', 5051), ('Jinonic', 5061), ('Walterovo', 5061), ('Na Pláni', 5024), ('Park na Pláni', 5024), ('Křížová', 5023), ('Laurová', 5022),
     ('Škola Radlice', 5021), ('Kudrnova', 5046), ('Zahradníčkova', 5047),
+    # doplněno podle organizátorů (14. 10. 2026): souřadnice / adresní body → okrsek
+    ('U Zvonu', 5057), ('Albert', 5028), ('Na Vinici', 5025), ('Peroutkova', 5025), ('Císařská louka', 5017),
+    ('Olgy Scheinpflugové', 5081), ('Krále Miroslava', 5022), ('Beránk', 5022),
 ]
+# upřesnění místa, které v kalendáři chybí nebo je zkrácené (podle organizátorů)
+MISTO = [('Na Vinici', 'restaurace Na Vinici, Peroutkova 1212/2'), ('Beránk', 'hospoda Krále Miroslava, zastávka Laurová')]
 
 
 def classify(t):
@@ -445,6 +450,9 @@ for e in events:
     place = e['place']
     if place:
         place = re.sub(r',? ?\d{3} \d{2} Prague, Czechia$|, Prague, Czechia$', '', place).strip()
+    place = next((m for k, m in MISTO if k.lower() in hay.lower()), place)
+    if typ == 'SWAP' and anc is None and 'barandov' not in hay.lower() and 'barrandov' not in hay.lower():
+        anc, place = 5004, place or 'Arbesovo náměstí'  # SWAP bez uvedení Barrandova je vždy na Arbesově náměstí
     if anc is not None:
         ct = okr2ct[anc]  # místo je přesnější než název akce (např. „na Hřebenkách“ u Kavalírky)
     ev_out.append(dict(datum=d.isoformat() if d else None, nazev=title, typ=typ, ctvrt=ct, misto=place, od=tf, do=tt, hodin=hrs, okrsek=anc,

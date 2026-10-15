@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261015c').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261015e').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -836,6 +836,14 @@ function init(D) {
       tile4('Preferenční pravidlo', F.preference_shoda['10'] && !F.preference_shoda['5'] ? '10 %' : '?', '10% hranice sedí na všechny kandidátky, 5% ne') +
       tile4('Nálezy v okrscích P5', String(F.nalezy.length), `${cnt('vysoká')} vysoká jistota · ${cnt('střední')} střední · ${cnt('informativní')} informativní`);
     $('#kon-text').innerHTML = `<p>Nezávisle jsme přepočítali mandáty podle zákona (5% klauzule s přepočtem pro neúplné kandidátky, D'Hondt, 10% preferenční pravidlo) a prošli okrsky Prahy 5 testy, které používá audit <a href="https://volebnianalyza.suchan.cz/kv/praha/index.html">volebnianalyza.suchan.cz</a>. Výsledky se shodují: rozhodující marže zastupitelstva Prahy 5 vychází ${int(PM.hlasu)} hlasů (audit: ${PM.suchan}) a našli jsme i tytéž okrsky s chybami (nulové neplatné lístky 5004, 5019, 5067; překlep 5036; chybějící balík lístků STAN v 5019; rozdíl obálek 5081). <b>Žádný nález nemění mandáty</b> – ani v zastupitelstvu Prahy 5, ani na magistrátu (chybějící hlasy STAN v okrsku 5019 jsou řádově 2 000, na změnu mandátu by bylo potřeba přes 44 000). Chyby se týkají hlavně preferenčních hlasů jednotlivých kandidátů.</p>`;
+    {
+      const nul = F.nalezy.filter((n) => n.typ === 'Nulový počet hlasů kandidátky'), vy = F.nalezy.filter((n) => n.typ === 'Nízké využití hlasů na lístku');
+      $('#kon-text').insertAdjacentHTML('beforeend', `<p><b>Testy podle analýzy <a href="https://www.mahdalova-skop.cz/clanek/volby-cr-2026-10-12-anomalie-ve-vysledcich" target="_blank" rel="noopener">Mahdalové a Škopa</a>:</b> doplnili jsme jejich test nulových hlasů kandidátky (strana má v okrsku 0 hlasů, ačkoli by podle Prahy 5 čekala aspoň 100) a test využití hlasů (okrsek, kde voliči využili o 12 a víc bodů méně hlasů než medián). ` +
+        (nul.length ? `Nulové hlasy: ${nul.map((n) => `${n.okrsek} ${esc(n.subjekt.replace(/ s podp.*/, ''))} (${esc(n.zastupitelstvo)})`).join(', ')}. ` : 'Nulové hlasy: nic. ') +
+        `Jejich jediný nález na Praze 5 – SPD s nulou v okrsku 5004 – vidíme na obou lístcích, do MČ i na magistrát, takže jde spíš o skutečný výsledek malého okrsku než o chybu. ` +
+        (vy.length ? `Nízké využití hlasů: ${vy.map((n) => `${n.okrsek} (${esc(n.zastupitelstvo)}, ${esc(n.subjekt)})`).join(', ')} – potvrzuje náš nález chybějícího balíku lístků v tomtéž okrsku. ` : 'Nízké využití hlasů: nic. ') +
+        `Na lístku do MČ Prahy 5 žádný okrsek nevybočuje. Tyto nálezy se do pořadí „kde hledat hlasy na 4. mandát“ nezapočítávají podruhé.</p>`);
+    }
     const dots = { 'vysoká': '●●●', 'střední': '●●', 'informativní': '●' };
     table($('#tb-kon-nalezy'), [
       { k: 'jistota', label: 'Jistota', f: (r) => `<span title="${esc(r.jistota)}">${dots[r.jistota] || ''}</span>` },
@@ -922,6 +930,38 @@ function init(D) {
       { k: 'kam', label: 'Kam', f: (r) => esc(r.kam) }, { k: 'p5', label: 'Praha 5', n: 1, f: (r) => `${nf(r.pct, 0)} %` },
       { k: 'praha', label: 'Praha', n: 1, f: (r) => { const x = nvp.kam.find((y) => y.kam === r.kam || (r.kam === 'ODS, TOP 09, KDU' && y.kam === 'SPOLU')); return x ? `${nf(x.pct, 0)} %` : '–'; } },
     ], nv5.kam);
+    const DM = (DP.ps25_kv26 || {}).doma;
+    if (DM) {
+      const g = (s) => DM.find((r) => r.strana === s) || {};
+      const ms = (s) => g(s).ms_praha;
+      $('#d-doma-text').innerHTML = `<p>Komunální volby mají mnohem nižší účast než sněmovní (Praha 5 letos ${pct(UC.p5_2026)}), takže velká část voličů roku 2025 letos prostě nepřišla. Odhad z okrsků ukazuje, že doma zůstali hlavně voliči Pirátů (Praha 5 ${pct(g('Piráti').p5.pct, 0)}, Praha ${pct(g('Piráti').praha.pct, 0)}), ANO (${pct(g('ANO').p5.pct, 0)} / ${pct(g('ANO').praha.pct, 0)}) a SPD a menších stran, zatímco voliči SPOLU přišli skoro všichni (${pct(g('SPOLU').p5.pct, 0)} / ${pct(g('SPOLU').praha.pct, 0)}).</p>
+        <p><b>Srovnání s nezávislou analýzou:</b> <a href="${DP.ps25_kv26.doma_zdroj}" target="_blank" rel="noopener">Mahdalová & Škop</a> odhadli totéž pro 22 měst a senátních obvodů dvěma metodami. V Praze jim vyšlo, že doma zůstalo ${nf(ms('Piráti')[0], 0)}–${nf(ms('Piráti')[1], 0)} % pirátských voličů, ${nf(ms('ANO')[0], 0)}–${nf(ms('ANO')[1], 0)} % voličů ANO a ${nf(ms('SPD')[0], 0)}–${nf(ms('SPD')[1], 0)} % voličů SPD; u SPOLU byl medián přes všech 22 míst ${g('SPOLU').ms_median22} %. Naše pražské odhady leží uvnitř jejich rozsahů, obě analýzy se tedy shodují: <b>hlavním kanálem pirátského propadu je nevolení</b>, ne přechod k jiné straně. Kdo z pirátských voličů roku 2025 přišel a volil jinak, šel podle obou analýz hlavně k Praha sobě / PRAHA 5 SOBĚ.</p>
+        <p class="small">Toky od nevoličů a k nevoličům jsou v ekologické inferenci nejméně spolehlivé a u malých stran (Piráti, SPD) jsou intervaly široké; Mahdalová & Škop upozorňují na totéž. Na Praze 5 je odhad z ${DP.ps25_kv26.p5.okrsku} okrsků, v Praze z ${int(DP.ps25_kv26.praha.okrsku)}.</p>`;
+      (() => {
+        const box = $('#ch-d-doma'), rows = DM.filter((r) => r.strana !== 'Ostatní'), W = 560, rowH = 40, L = 100, R = 20, T = 8, H = T + rows.length * rowH + 30;
+        const s = svgRoot(box, W, H), X = (v) => L + (v / 100) * (W - L - R);
+        for (let v = 0; v <= 100; v += 25) { el('line', { x1: X(v), x2: X(v), y1: T, y2: H - 24, class: v ? 'grid' : 'axis' }, s); el('text', { x: X(v), y: H - 8, 'text-anchor': 'middle' }, s).textContent = v + ' %'; }
+        const C5 = css('--ink'), CP = css('--s1'), CM = css('--gray-mark');
+        rows.forEach((r, i) => {
+          const y = T + i * rowH + rowH / 2, g = el('g', {}, s);
+          el('rect', { x: 0, y: y - rowH / 2, width: W, height: rowH, fill: 'transparent' }, g);
+          el('text', { x: L - 10, y: y + 4, 'text-anchor': 'end', class: r.strana === 'Piráti' ? 'lbl' : '' }, g).textContent = r.strana;
+          if (r.ms_median22 != null && !r.ms_praha) el('line', { x1: X(r.ms_median22), x2: X(r.ms_median22), y1: y - 13, y2: y + 13, stroke: CM, 'stroke-width': 3 }, g);
+          if (r.ms_praha) el('rect', { x: X(r.ms_praha[0]), y: y - 13, width: Math.max(2, X(r.ms_praha[1]) - X(r.ms_praha[0])), height: 26, rx: 4, fill: CM, opacity: 0.35 }, g);
+          [[r.p5, C5, -6], [r.praha, CP, 6]].forEach(([d, c, dy]) => {
+            if (!d) return;
+            el('line', { x1: X(d.p05), x2: X(d.p95), y1: y + dy, y2: y + dy, stroke: c, 'stroke-width': 2 }, g);
+            el('circle', { cx: X(d.pct), cy: y + dy, r: 5, fill: c, stroke: css('--surface'), 'stroke-width': 2 }, g);
+          });
+          hover(g, `<b>${esc(r.strana)}</b> – voliči 2025, kteří v roce 2026 nevolili<br>Praha 5: ${pct(r.p5.pct, 0)} (${nf(r.p5.p05, 0)}–${nf(r.p5.p95, 0)} %), asi ${int(r.p5.volicu)} voličů 2025` +
+            (r.praha ? `<br>Praha: ${pct(r.praha.pct, 0)} (${nf(r.praha.p05, 0)}–${nf(r.praha.p95, 0)} %)` : '') +
+            (r.ms_praha ? `<br>Mahdalová & Škop, Praha: ${nf(r.ms_praha[0], 0)}–${nf(r.ms_praha[1], 0)} %` : '') + (r.ms_median22 != null ? `<br>Mahdalová & Škop, medián 22 míst: ${r.ms_median22} %` : ''));
+        });
+        $('#lg-d-doma').innerHTML = `<span><span class="sw" style="background:${C5}"></span>Praha 5 (náš odhad)</span><span><span class="sw" style="background:${CP}"></span>Praha (náš odhad, magistrát)</span><span><span class="sw" style="background:${CM};opacity:.5"></span>Mahdalová & Škop: rozsah v Praze (pás) nebo medián 22 míst (čárka)</span>`;
+        tableToggle(box, ['strana', 'Praha 5', 'Praha', 'Mahdalová & Škop (Praha)'], rows.map((r) => [r.strana, `${nf(r.p5.pct, 0)} % (${nf(r.p5.p05, 0)}–${nf(r.p5.p95, 0)})`,
+          r.praha ? `${nf(r.praha.pct, 0)} % (${nf(r.praha.p05, 0)}–${nf(r.praha.p95, 0)})` : '–', r.ms_praha ? `${nf(r.ms_praha[0], 0)}–${nf(r.ms_praha[1], 0)} %` : (r.ms_median22 != null ? `medián 22 míst ${r.ms_median22} %` : '–')]));
+      })();
+    }
     table($('#tb-d-ucastkor'), [{ k: 'strana', label: 'Strana' }, { k: 'r', label: 'r (změna účasti × změna podílu)', n: 1, f: (r) => nf(r.r, 2) }],
       Object.entries(UC.korelace_zmena_ucasti).map(([strana, r]) => ({ strana, r })));
 

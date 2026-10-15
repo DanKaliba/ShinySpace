@@ -35,8 +35,8 @@ ZAST = {P5: 'MČ Praha 5', MAG: 'magistrát'}
 nalezy = []
 
 
-def nalez(typ, o, kod, subjekt, detail, jistota, vliv='bez vlivu na mandáty', listina=None, korekce=None):
-    nalezy.append(dict(typ=typ, okrsek=int(o), ctvrt=O[o]['ctvrt'], zastupitelstvo=ZAST[kod], subjekt=subjekt, detail=detail, jistota=jistota, vliv=vliv,
+def nalez(typ, o, kod, subjekt, detail, jistota, vliv='bez vlivu na mandáty', listina=None, korekce=None, do_skore=True):
+    nalezy.append(dict(typ=typ, okrsek=int(o), ctvrt=O[o]['ctvrt'], zastupitelstvo=ZAST[kod], subjekt=subjekt, detail=detail, jistota=jistota, vliv=vliv, do_skore=do_skore,
                        listina=listina, korekce_hlasu=None if korekce is None else int(round(korekce)),
                        url=URL.format(o=o), json=URLJ.format(o=o)))
 
@@ -110,6 +110,39 @@ for kod in (P5, MAG):
             zeros = np.nonzero(v == 0)[0]
             if len(zeros) >= 2 and zeros[0] < n - 1 and np.all(v[zeros[0]:] == 0) and med >= 10:
                 nalez('Neúplně opsané řádky kandidátů', o, kod, names[p], f'kandidáti č. {zeros[0] + 1}–{n} mají 0 hlasů, předchozí kolem {med:.0f}', 'vysoká', 'ovlivní preferenční hlasy', names[p], med * (n - zeros[0]))
+
+# Testy podle DataTimes / Mahdalová & Škop (12. 10. 2026): nulové hlasy kandidátky a nízké využití hlasů.
+# do_skore=False: potvrzují nebo doplňují jiné nálezy, do pořadí „kde hledat“ se nezapočítávají podruhé.
+SH, NM = {}, {}
+for kod in (P5, MAG):
+    t = T[kod]
+    h = hl[hl.ID_OKRSKY.isin(set(t.ID_OKRSKY))].drop(columns=['OKRSEK'], errors='ignore').merge(t.reset_index()[['ID_OKRSKY', 'OKRSEK']], on='ID_OKRSKY')
+    NM[kod] = ros[ros.KODZASTUP == kod].set_index('POR_STR_HL').ZKRATKAO30
+    SH[kod] = h.pivot_table(index='OKRSEK', columns='POR_STR_HL', values='POC_HLASU', aggfunc='sum').reindex(index=ids, columns=NM[kod].index).fillna(0)
+for kod in (P5, MAG):
+    t, piv, other = T[kod], SH[kod], MAG if kod == P5 else P5
+    podil = piv.sum() / t.PL_HL_CELK.sum()
+    for o in ids:
+        for p in piv.columns:
+            exp = podil[p] * t.loc[o, 'PL_HL_CELK']
+            if piv.loc[o, p] == 0 and podil[p] >= 0.02 and exp >= 100:
+                nm = NM[kod][p]
+                po = NM[other][NM[other].str[:3] == nm[:3]].index
+                obe = len(po) > 0 and SH[other].loc[o, po].sum() == 0
+                nalez('Nulový počet hlasů kandidátky', o, kod, nm,
+                      f'0 hlasů, podle podílu v Praze 5 ({podil[p] * 100:.1f} %) by se čekalo asi {exp:.0f}; '
+                      + ('nulu má tato strana ve stejném okrsku i na druhém lístku, takže jde spíš o skutečný výsledek (malý okrsek, pár voličů této strany)' if obe else 'na druhém lístku tu strana hlasy má – stojí za kontrolu zápisu'),
+                      'informativní' if obe else 'střední', do_skore=False)
+                nalezy[-1]['detail'] = nalezy[-1]['detail'].replace('.', ',')
+    seats = int(coco[kod])
+    vyuz = t.PL_HL_CELK / (t.PLAT_LISTKY * seats) * 100
+    med = vyuz[t.PLAT_LISTKY >= 50].median()
+    for o in ids:
+        if t.loc[o, 'PLAT_LISTKY'] >= 50 and vyuz[o] < med - 12:
+            chybi = (med - vyuz[o]) / 100 * t.loc[o, 'PLAT_LISTKY'] * seats
+            nalez('Nízké využití hlasů na lístku', o, kod, f'{vyuz[o]:.1f} % hlasů'.replace('.', ','),
+                  f'voliči využili {vyuz[o]:.1f} % z možných {seats} hlasů na lístek proti mediánu Prahy 5 {med:.1f} %; proti mediánu chybí asi {chybi:,.0f} hlasů'.replace(',', ' ').replace('.', ','),
+                  'střední', 'chybí hlasy; ovlivní preferenční hlasy, na mandáty má vliv jen výjimečně', do_skore=False)
 
 # Benford – 2. číslice hlasů stran v okrscích (hlasy ≥ 10)
 BEN2 = np.array([sum(math.log10(1 + 1 / (10 * k + d)) for k in range(1, 10)) for d in range(10)])

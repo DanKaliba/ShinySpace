@@ -47,9 +47,11 @@ KV = {y: D.kv(y) for y in (2022, 2026)}
 bloc_votes, ps_votes = D.bloc_votes, D.ps_votes
 
 
-def ei_summary(Xa, Yb, w, focus, nboot):
+def ei_summary(Xa, Yb, w, focus, nboot, boot_out=None):
     B = fit(Xa.values, Yb.values, w)
     bo = bootstrap(Xa.values, Yb.values, w, rng, n=nboot) if nboot else None
+    if boot_out is not None:
+        boot_out.append(bo)
     i = list(Xa.columns).index(focus)
     rows = []
     for j, c in enumerate(Yb.columns):
@@ -155,14 +157,16 @@ k5 = stable(tps, tc).intersection(vps.index)
 k5 = [k for k in k5 if k[1] != 5008]
 Xps = composition(vps, tps, k5)
 Ymc = composition(vc, tc, k5)
-B_ps5, ps5_kam = ei_summary(Xps, Ymc, tps.VOL_SEZNAM.loc[k5].values, 'Piráti', 200)
+bo_ps5 = []
+B_ps5, ps5_kam = ei_summary(Xps, Ymc, tps.VOL_SEZNAM.loc[k5].values, 'Piráti', 200, bo_ps5)
 size_ps5 = Xps.mul(tps.VOL_SEZNAM.loc[k5], axis=0).sum()
 # Praha: PS → magistrát
 vpa, tpa = ps_votes(PSB)
 vma, tma = bloc_votes(2026, MAG, MB)
 kp = stable(tpa, tma).intersection(vpa.index).intersection(vma.index)
 Xpa, Yma = composition(vpa, tpa, kp), composition(vma, tma, kp)
-B_psp, psp_kam = ei_summary(Xpa, Yma, tpa.VOL_SEZNAM.loc[kp].values, 'Piráti', 60)
+bo_psp = []
+B_psp, psp_kam = ei_summary(Xpa, Yma, tpa.VOL_SEZNAM.loc[kp].values, 'Piráti', 60, bo_psp)
 size_psp = Xpa.mul(tpa.VOL_SEZNAM.loc[kp], axis=0).sum()
 out['ps25_kv26'] = dict(
     p5=dict(okrsku=len(k5), kategorie_ps=list(Xps.columns), kategorie_kv=list(Ymc.columns), matice=[[round(float(v), 4) for v in r] for r in B_ps5],
@@ -170,7 +174,24 @@ out['ps25_kv26'] = dict(
     praha=dict(okrsku=len(kp), kategorie_ps=list(Xpa.columns), kategorie_kv=list(Yma.columns), matice=[[round(float(v), 4) for v in r] for r in B_psp],
                velikost_ps={c: int(v) for c, v in size_psp.items()}, pirati_kam=psp_kam),
 )
+# kdo zůstal doma: podíl voličů strany z PS 2025, kteří v KV 2026 nevolili (sloupec Nevoliči), P5 i Praha
+# srovnání: Mahdalová & Škop, „Kdo zůstal doma“ (12. 10. 2026), Praha – rozsah dvou metod (počty voličů z článku ÷ velikost skupiny)
+MS_PRAHA = {'ANO': (47.8, 60.3), 'Piráti': (37.5, 65.5), 'SPD': (63.9, 100.0)}
+MS_MEDIAN22 = {'ANO': 54, 'SPOLU': 7}
+
+
+def doma(B, bo, cats_x, cats_y, size):
+    j = list(cats_y).index('Nevoliči')
+    return {c: dict(pct=round(float(B[i, j]) * 100, 1), p05=ci(bo, i, j)[0], p95=ci(bo, i, j)[1], volicu=int(size[c]))
+            for i, c in enumerate(cats_x) if c != 'Nevoliči'}
+
+
+d5 = doma(B_ps5, bo_ps5[0], Xps.columns, Ymc.columns, size_ps5)
+dp = doma(B_psp, bo_psp[0], Xpa.columns, Yma.columns, size_psp)
+out['ps25_kv26']['doma'] = [dict(strana=c, p5=d5[c], praha=dp.get(c), ms_praha=MS_PRAHA.get(c), ms_median22=MS_MEDIAN22.get(c)) for c in d5]
+out['ps25_kv26']['doma_zdroj'] = 'https://www.mahdalova-skop.cz/clanek/volby-cr-2026-10-12-kdo-zustal-doma'
 print('d) P5', ps5_kam[:4], '\n   Praha', psp_kam[:4])
+print('   doma', [(r['strana'], r['p5']['pct'], r['praha']['pct'] if r['praha'] else None) for r in out['ps25_kv26']['doma']])
 
 # ---------------------------------------------------------------- e) účast
 rows = pd.DataFrame(data['okrsky']).set_index('okrsek').drop(index=5008)

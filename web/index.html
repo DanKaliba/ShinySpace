@@ -6,7 +6,7 @@
 <title>Piráti Praha 5 – volby 2026</title>
 <meta name="description" content="Analýza výsledků Pirátů v komunálních volbách 2026 v Praze a na Praze 5 po volebních okrscích, srovnání s rokem 2022 a sněmovními volbami 2025, senát a kampaňové akce.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=20261015c">
+<link rel="stylesheet" href="style.css?v=20261015e">
 </head>
 <body>
 <header class="top" id="top">
@@ -323,7 +323,7 @@
 
   <section id="doplneni">
     <h2>Doplňující analýzy</h2>
-    <p class="note">Body z „Co v analýze chybí“, které šlo udělat z veřejných dat. Rychlé odkazy: <a href="#d-vek">věk a pohlaví 2026</a> · <a href="#d-split">MČ × magistrát</a> · <a href="#d-pref">preference na magistrát</a> · <a href="#d-ucast">účast</a> · <a href="#d-vystavba">nová výstavba</a> · <a href="#d-mc">srovnání MČ</a> · <a href="#d-mandaty">Monte Carlo mandátů</a> · <a href="#d-ei">varianty odhadu přesunů</a>. Přesuny ze sněmovních voleb 2025 jsou v <a href="#psefologie">Sankey diagramu</a>.</p>
+    <p class="note">Body z „Co v analýze chybí“, které šlo udělat z veřejných dat. Rychlé odkazy: <a href="#d-vek">věk a pohlaví 2026</a> · <a href="#d-split">MČ × magistrát</a> · <a href="#d-pref">preference na magistrát</a> · <a href="#d-ucast">účast</a> · <a href="#d-doma">kdo zůstal doma</a> · <a href="#d-vystavba">nová výstavba</a> · <a href="#d-mc">srovnání MČ</a> · <a href="#d-mandaty">Monte Carlo mandátů</a> · <a href="#d-ei">varianty odhadu přesunů</a>. Přesuny ze sněmovních voleb 2025 jsou v <a href="#psefologie">Sankey diagramu</a>.</p>
 
     <h3 id="d-vek">Věk a pohlaví v roce 2026</h3>
     <div id="d-vek-text" class="prose"></div>
@@ -347,6 +347,12 @@
       <figure class="card"><figcaption>Nevoliči 2022, kteří v roce 2026 přišli (odhad)</figcaption><div class="tablewrap"><table class="data" id="tb-d-nevol"></table></div></figure>
       <figure class="card"><figcaption>Okrsky: změna účasti × změna stran 2022 → 2026 (r)</figcaption><div class="tablewrap"><table class="data" id="tb-d-ucastkor"></table></div></figure>
     </div>
+
+    <h3 id="d-doma">Kdo zůstal doma: sněmovní volby 2025 → komunální 2026</h3>
+    <div id="d-doma-text" class="prose"></div>
+    <figure class="card"><figcaption>Podíl voličů strany ze sněmovních voleb 2025, kteří v komunálních volbách 2026 nevolili (odhad, 90% interval)</figcaption>
+      <div id="ch-d-doma"></div>
+      <div class="legend" id="lg-d-doma"></div></figure>
 
     <h3 id="d-vystavba">Nová výstavba</h3>
     <div id="d-vystavba-text" class="prose"></div>
@@ -388,6 +394,6 @@
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="app.js?v=20261015c"></script>
+<script src="app.js?v=20261015e"></script>
 </body>
 </html>

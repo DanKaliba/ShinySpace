@@ -108,7 +108,8 @@ df['hlasu_na_listek'] = T[P5].PL_HL_CELK / T[P5].PLAT_LISTKY
 df['obalky_rozdil'] = T[P5].VYD_OBALKY - T[P5].ODEVZ_OBAL
 nal = {}
 for n in data['forenzni']['nalezy']:
-    nal.setdefault(n['okrsek'], []).append(n['typ'])
+    if n.get('do_skore', True):
+        nal.setdefault(n['okrsek'], []).append(n['typ'])
 casy = pd.Series({o: pd.to_datetime(cas[o]['cas']) for o in cas})
 pozde = set(casy.sort_values().index[-5:])
 rows = []

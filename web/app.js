@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261015e').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261016a').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -382,6 +382,7 @@ function init(D) {
     { k: 'cen26_0_14', label: 'Děti 0–14 (2026)', br: [12, 14, 16, 18, 20], ramp: BLUE },
     { k: 'cen26_65', label: 'Senioři 65+ (2026)', br: [12, 14, 16, 18, 20], ramp: BLUE },
     { k: 'mc_minus_mag', label: 'Piráti MČ − magistrát', br: [-4, -2, -1, 0, 1], ramp: DIV, fmt: (v) => (v > 0 ? '+' : '') + nf(v, 0) },
+    { k: 'senat_k2_sablik', label: 'Senát 2. kolo: předpověď', br: [40, 45, 50, 55, 60], ramp: ['#0e7a52', '#1baf7a', '#a3dcc5', '#b5d3f5', '#5a9be6', '#1f5fae'], fmt: (v) => nf(v, 0) + ' %', unit: ' Sáblík (zbytek Láska)' },
     { k: 'hledani_skore', label: '4. mandát: kde hledat', br: [100, 200, 300, 450, 600], ramp: ORANGE, get: (o) => ((D.hledani || {}).okrsky || []).find((r) => r.okrsek === o.okrsek)?.skore, fmt: (v) => v },
     { k: 'pedersen', label: 'Volatilita (Pedersen)', br: [10, 13, 16, 19, 22], ramp: ORANGE, fmt: (v) => v },
     { k: 'akce', label: 'Akce', br: [1, 3, 6, 10, 14], ramp: BLUE, get: (o) => o.akci_kampan_do_700m, fmt: (v) => v, unit: ' akcí do 700 m' },
@@ -691,16 +692,17 @@ function init(D) {
   if (D.senat_predikce) {
     const SP = D.senat_predikce, MA = SP.model_a, MB = SP.model_b, HI = SP.historie, OV = SP.overeni, VZ = MB.vzorce;
     const t6 = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+    const OBH = SP.obhajoba, A1 = OBH.model_a1, SG = OBH.skupiny.find((g) => g.situace === 'vítěz 1. kola obhajuje'), OV1 = OBH.overeni;
     $('#senpred-tiles').innerHTML =
-      t6('Model A: šance Sáblíka', pct(MA.p, 0), `90% interval ${nf(MA.p05, 0)}–${nf(MA.p95, 0)} % · podle náskoku ${pp(SP.naskok_pb)} v 1. kole`) +
-      t6('Model B: šance Sáblíka', pct(MB.p, 0), `podíl z ${HI.druhych_kol} vzorců přesunů, se kterými by vyhrál · jen pražské: ${pct(MB.p_praha, 0)}`) +
-      t6('Podobný náskok v minulosti', `${HI.podobny_naskok.druhy_vyhral} z ${HI.podobny_naskok.kol}`, `druhých kol s náskokem ${nf(HI.podobny_naskok.od)}–${nf(HI.podobny_naskok.do)} p. b. vyhrál druhý z 1. kola`) +
+      t6('Šance Sáblíka (výsledná předpověď)', pct(A1.p, 0), `model A1: náskok ${pp(SP.naskok_pb)} + Láska obhajuje mandát · 90% interval ${nf(A1.p05, 0)}–${nf(A1.p95, 0)} %`) +
+      t6('Bez zohlednění obhajoby', `${pct(MA.p, 0)} / ${pct(MB.p, 0)}`, `model A (jen náskok) / model B (přesuny voličů)`) +
+      t6('Když vede obhájce mandátu', `${SG.druhy_vyhral} z ${SG.kol}`, `druhých kol ${HI.roky} vyhrál druhý z 1. kola (${pct(SG.pct, 0)}; bez obhájce ${pct(OBH.skupiny.find((g) => g.situace === 'nikdo neobhajuje').pct, 0)})`) +
       t6('Bod zvratu', pct(MB.potreba_z_ostatnich.median, 0), `voličů vypadlých kandidátů, kteří přijdou, by musel získat Sáblík (medián; obvykle jich přijde ${pct(VZ.ostatni_k_vitezi + VZ.ostatni_k_druhemu, 0)})`);
-    $('#senpred-text').innerHTML = `<p>Václav Láska vede po 1. kole o ${int(SP.k1.laska - SP.k1.sablik)} hlasů (${pp(SP.naskok_pb)}). Šanci Radka Sáblíka odhadují dva nezávislé modely postavené na všech ${HI.druhych_kol} druhých kolech senátních voleb ${HI.roky} (z toho ${HI.praha} v Praze). Druhý z 1. kola v nich vyhrál ${HI.druhy_vyhral}× (${pct(HI.druhy_vyhral_pct, 0)}), v Praze ${HI.praha_druhy_vyhral}× z ${HI.praha}.</p>
-      <p><b>Model A (historický)</b> je logistická regrese: pravděpodobnost, že vyhraje druhý z 1. kola, podle náskoku vítěze. Pro náskok ${pp(SP.naskok_pb)} vychází <b>${pct(MA.p, 0)}</b> (bootstrap, 90% interval ${nf(MA.p05, 0)}–${nf(MA.p95, 0)} %).</p>
-      <p><b>Model B (přesuny voličů)</b> odhaduje v každém minulém druhém kole ekologickou inferencí z okrsků, kolik voličů obou finalistů přišlo znovu, kam šli voliči vypadlých kandidátů a kolik lidí přišlo navíc. Každý z ${HI.druhych_kol} vzorců pak použije na výsledek 1. kola v obvodu 21. Typicky přijde znovu ${pct(VZ.vitez_znovu, 0)} voličů vítěze 1. kola a ${pct(VZ.druhy_znovu, 0)} voličů druhého; z voličů vypadlých kandidátů ${pct(VZ.ostatni_neprisli, 0)} nepřijde, ${pct(VZ.ostatni_k_vitezi, 0)} volí vítěze 1. kola a ${pct(VZ.ostatni_k_druhemu, 0)} druhého. Sáblík vyhraje se <b>${pct(MB.p, 0)}</b> vzorců (s pražskými ${pct(MB.p_praha, 0)}). Medián výsledku je Láska o ${nf(-MB.rozdil_median)} p. b. před Sáblíkem při účasti asi ${pct(MB.ucast_median, 0)}.</p>
-      <p><b>Ověření na minulých volbách:</b> každé minulé druhé kolo jsme předpověděli bez něj samotného. Brierovo skóre (nižší = lepší): model A ${nf(OV.A.brier, 3)}, model B ${nf(OV.B.brier, 3)}, prostý odhad „druhý vyhrává v ${pct(HI.druhy_vyhral_pct, 0)} případů“ ${nf(OV.zakladni.brier, 3)}. Oba modely jsou lepší než prostý průměr, překvapení ale nejsou vzácná – druhý z 1. kola vyhrává zhruba každé páté druhé kolo.</p>
-      <p><b>Co modely nevědí:</b> kdo kandiduje a koho podpořili vypadlí kandidáti. Šarapatka (${pct(sarK.pct)}) byl silnější tam, kde jsou silní Piráti a STAN, a slabší tam, kde je silný SEN – to Sáblíkovi mírně nahrává. Rozhodne hlavně to, kolik Šarapatkových voličů přijde a jak se rozdělí: Sáblík by podle modelu B potřeboval asi ${pct(MB.potreba_z_ostatnich.median, 0)} voličů vypadlých kandidátů, kteří přijdou (v polovině vzorců ${nf(MB.potreba_z_ostatnich.p25, 0)}–${nf(MB.potreba_z_ostatnich.p75, 0)} %). Po 2. kole sem doplníme skutečný výsledek a odhad, kam se Šarapatkovi voliči přesunuli.</p>`;
+    $('#senpred-text').innerHTML = `<p>Václav Láska vede po 1. kole o ${int(SP.k1.laska - SP.k1.sablik)} hlasů (${pp(SP.naskok_pb)}) a obhajuje mandát (senátorem za obvod 21 je od roku 2014). Šanci Radka Sáblíka odhadujeme modely postavenými na všech ${HI.druhych_kol} druhých kolech senátních voleb ${HI.roky} (z toho ${HI.praha} v Praze). Druhý z 1. kola v nich vyhrál ${HI.druhy_vyhral}× (${pct(HI.druhy_vyhral_pct, 0)}). Obvod 21 tvoří celá Praha 5 (60 % voličů) a část Prahy 13 (40 %).</p>
+      <p><b>Výsledná předpověď – model A1</b> je logistická regrese: pravděpodobnost, že vyhraje druhý z 1. kola, podle náskoku vítěze a podle toho, kdo obhajuje mandát. Vychází <b>${pct(A1.p, 0)}</b> pro Sáblíka (bootstrap, 90% interval ${nf(A1.p05, 0)}–${nf(A1.p95, 0)} %). Obhajoba přitom Láskovi nepomáhá, spíš naopak: když po 1. kole vede obhájce, druhý vyhrává častěji (${SG.druhy_vyhral} z ${SG.kol} kol, ${pct(SG.pct, 0)}), ačkoli obhájci mívají větší náskok (medián ${nf(SG.naskok_median)} p. b.). Po zohlednění náskoku má druhý z 1. kola proti vedoucímu obhájci zhruba ${nf(Math.exp(A1.beta.obhajce_vitez), 1)}× vyšší šanci (p = ${nf(A1.p_hodnota.obhajce_vitez, 2)}) – obhájce má své voliče zmobilizované už v 1. kole, vyzyvatel sjednocuje ty, kdo chtějí změnu. Bez obhajoby by modely dávaly Sáblíkovi ${pct(MA.p, 0)} (model A, jen náskok) a ${pct(MB.p, 0)} (model B, přesuny voličů).</p>
+      <p><b>Model B (přesuny voličů)</b> odhaduje v každém minulém druhém kole ekologickou inferencí z okrsků, kolik voličů obou finalistů přišlo znovu, kam šli voliči vypadlých kandidátů a kolik lidí přišlo navíc. Typicky přijde znovu ${pct(VZ.vitez_znovu, 0)} voličů vítěze 1. kola a ${pct(VZ.druhy_znovu, 0)} voličů druhého; z voličů vypadlých kandidátů ${pct(VZ.ostatni_neprisli, 0)} nepřijde, ${pct(VZ.ostatni_k_vitezi, 0)} volí vítěze 1. kola a ${pct(VZ.ostatni_k_druhemu, 0)} druhého. Model B slouží hlavně k rozložení výsledku mezi okrsky (níže).</p>
+      <p><b>Ověření na minulých volbách:</b> každé minulé druhé kolo jsme předpověděli bez něj samotného. Brierovo skóre (nižší = lepší): A1 ${nf(OV1.A1.brier, 3)}, A ${nf(OV1.A.brier, 3)}, B ${nf(OV1.B.brier, 3)}, prostý odhad „druhý vyhrává v ${pct(HI.druhy_vyhral_pct, 0)} případů“ ${nf(OV.zakladni.brier, 3)}. A1 je nejlepší; překvapení ale nejsou vzácná.</p>
+      <p><b>Co modely nevědí:</b> doporučení vypadlých kandidátů. TOP 09, která spolu s Piráty podporovala Šarapatku (${pct(sarK.pct)}), doporučila pro 2. kolo Sáblíka; Šarapatka sám ani Piráti doporučení nevydali. Vliv doporučení se z minulých kol změřit nedá. Rozhodne hlavně to, kolik Šarapatkových voličů přijde: přichází jich typicky jen asi čtvrtina, takže i kdyby 80 % z nich volilo Sáblíka, šance by se podle modelu B zvýšila jen asi o 14 bodů. Po 2. kole sem doplníme skutečný výsledek a odhad, kam se Šarapatkovi voliči přesunuli.</p>`;
     // A: křivka modelu + skutečný podíl výher druhého po 3 p. b.
     (() => {
       const box = $('#ch-senpred-a'), W = 560, H = 320, L = 48, R = 16, T = 16, B = 44, XM = 30;
@@ -753,6 +755,28 @@ function init(D) {
       $('#lg-senpred-b').innerHTML = `<span><span class="sw" style="background:${cL}"></span>vyhrává Láska</span><span><span class="sw" style="background:${cS}"></span>vyhrává Sáblík (${pct(MB.p, 0)} vzorců)</span>`;
       tableToggle(box, ['Sáblík − Láska (p. b.)', 'vzorců'], bins.filter((b) => b.P.length).map((b) => [`${b.a} až ${b.a + st}`, b.P.length]));
     })();
+  }
+
+  if (D.senat_okrsky) {
+    const SO = D.senat_okrsky, OB = SO.obvod_sablik, best = SO.metody.find((m) => m.metoda === SO.metoda), p5o = SO.okrsky.filter((r) => r.p5);
+    const ctv = (o) => (O.find((x) => x.okrsek === o) || {}).ctvrt || '';
+    const BY = SO.bayes, TB = BY.test.bayes_empiricky.vse, TBP = BY.test.bayes_empiricky.praha, all = SO.okrsky, p13 = all.filter((r) => !r.p5);
+    $('#senok-text').innerHTML = `<p><b>Předpověď po okrscích.</b> Rozložení mezi okrsky dává hierarchický bayesovský model: v každé ze 4 000 simulací se vezme celá tabulka přesunů voličů jednoho skutečného minulého druhého kola a každý okrsek se od ní náhodně odchýlí (podle toho, jak se okrsky odchylovaly v minulosti). Simulace jsou pak převážené tak, aby šance Sáblíka na celý obvod odpovídala modelu A1 (${pct(BY.p_obvod.bayes_empiricky_a1, 0)}); bez toho by vycházelo ${pct(BY.p_obvod.bayes_empiricky, 0)}. Podíl Sáblíka v obvodu: medián ${pct(OB.median, 0)}, 80% interval ${nf(OB.p10, 0)}–${nf(OB.p90, 0)} %.</p>
+      <p>Metodu jsme vybrali zpětným testem na ${SO.druhych_kol} minulých druhých kolech (každé předpovězeno bez sebe sama): typická chyba předpovězeného rozdělení v okrsku (CRPS) ${nf(TB.crps, 2)} p. b., v Praze ${nf(TBP.crps, 2)}; 80% interval pokryl skutečnost v ${pct(TB.pokryti_80, 0)} okrsků (ideál 80 %). Nebayesovská kontrola (konformní intervaly) i jednodušší metody v tabulce vlevo vycházejí podobně. Podle mediánu by Sáblík vedl v ${p5o.filter((r) => r.sablik > 50).length} z ${p5o.length} okrsků Prahy 5 a v ${p13.filter((r) => r.sablik > 50).length} z ${p13.length} okrsků Prahy 13 – hlavně na Smíchově u Anděla a Arbesova náměstí a na Hřebenkách. Na mapě okrsků Prahy 5 je předpověď jako vrstva „Senát 2. kolo: předpověď“.</p>`;
+    table($('#tb-senok-metody'), [
+      { k: 'popis', label: 'Metoda', f: (r) => (r.b ? `<b>${esc(r.popis)}</b> (použita)` : esc(r.popis)) },
+      { k: 'v', label: 'Zpětný test', n: 1, f: (r) => r.txt },
+    ], [{ popis: 'Bayesovský model (empirický prior)', b: 1, v: TB.crps, txt: `CRPS ${nf(TB.crps, 2)} p. b., pokrytí ${pct(TB.pokryti_80, 0)}` },
+      { popis: 'Bayes s nezávislým priorem', v: BY.test.bayes_nezavisly.vse.crps, txt: `CRPS ${nf(BY.test.bayes_nezavisly.vse.crps, 2)} p. b., pokrytí ${pct(BY.test.bayes_nezavisly.vse.pokryti_80, 0)}` },
+      { popis: 'Průměrné přesuny + chyba podle velikosti okrsku', v: BY.test.stavajici.vse.crps, txt: `CRPS ${nf(BY.test.stavajici.vse.crps, 2)} p. b., pokrytí ${pct(BY.test.stavajici.vse.pokryti_80, 0)}` },
+      ...SO.metody.map((m) => ({ popis: m.popis + ' (bodový odhad)', v: m.rmse, txt: `chyba ${nf(m.rmse)} p. b. při známém výsledku obvodu` }))]);
+    table($('#tb-senok'), [
+      { k: 'okrsek', label: 'Okrsek', n: 1, f: (r) => `<b>${r.okrsek}</b><br><span class="muted">${r.p5 ? esc(ctv(r.okrsek)) : 'Praha 13'}</span>` },
+      { k: 'k1_sablik_ze_dvou', label: '1. kolo: Sáblík ze dvou', n: 1, f: (r) => pct(r.k1_sablik_ze_dvou, 0) },
+      { k: 'sablik', label: 'Předpověď Sáblík', n: 1, f: (r) => `<b>${pct(r.sablik, 0)}</b><br><span class="muted">${nf(r.sablik_p10, 0)}–${nf(r.sablik_p90, 0)} %</span>` },
+      { k: 'p_sablik_vyhraje', label: 'Šance, že Sáblík vyhraje okrsek', n: 1, f: (r) => `<span class="${r.p_sablik_vyhraje >= 50 ? 'up' : ''}">${pct(r.p_sablik_vyhraje, 0)}</span>` },
+      { k: 'ucast', label: 'Očekávaná účast', n: 1, f: (r) => pct(r.ucast, 0) },
+    ], all, { sort: 'sablik', desc: true, onRow: (r) => { if (r.p5) { select(r.okrsek, true); $('#map-p5').scrollIntoView({ behavior: 'smooth', block: 'center' }); } } });
   }
 
   if (RZ.senat_korelace) {

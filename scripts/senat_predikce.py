@@ -9,46 +9,26 @@ B) Model přesunů voličů: pro každé minulé druhé kolo ekologická inferen
 Oba modely se ověřují zpětně (každé minulé druhé kolo se předpoví bez sebe sama).
 Model nezná kandidáty ani doporučení vypadlých kandidátů – jen to, jak se druhá kola v ČR obvykle vyvíjejí.
 """
-import sys, os, io, glob, json
-import xml.etree.ElementTree as ET
+import sys, os, json, re, math
 import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ei import fit  # noqa: E402
 from jsonio import save  # noqa: E402
+from senat_data import YEARS, PRAHA, load, hl  # noqa: E402
 
 DL, OUT = sys.argv[1:3]
 H = os.path.join(DL, 'senat_hist')
-YEARS = [2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024]
-PRAHA = {17, 19, 20, 21, 22, 23, 24, 25, 26, 27}
 OBVOD, LEAD, RUN = 21, 'Láska', 'Sáblík'
+# obhájce mandátu: „senátor/ka“ v povolání (zachytí i zvolené v doplňovacích volbách) nebo vítěz téhož obvodu před 6 lety
+RX_SEN = re.compile(r'\bsenátor(ka)?\b|předsed\w* senátu|místopředsed\w* senátu', re.I)
+VITEZ = {}  # (obvod, rok) -> jméno vítěze
+OBH_VSE = []  # (rok, obvod, vyhrál v 1. kole, postoupil, vyhrál ve 2. kole) pro každého obhájce
 
 
-def read(path):
-    if path.endswith('.xml'):
-        return pd.DataFrame([{c.tag.split('}')[1]: c.text for c in r} for r in ET.parse(path).getroot()])
-    raw = open(path, 'rb').read()
-    try:
-        txt = raw.decode('utf-8-sig')
-    except UnicodeDecodeError:
-        txt = raw.decode('cp1250')
-    head = txt.split('\n', 1)[0]
-    return pd.read_csv(io.StringIO(txt), sep=';' if head.count(';') > head.count(',') else ',', dtype=str)
-
-
-def load(base, name):
-    c = [p for p in glob.glob(os.path.join(base, '**', name + '.*'), recursive=True) if p.endswith(('.csv', '.xml'))]
-    c.sort(key=lambda p: ('csv_od' not in p, p.endswith('.xml')))
-    df = read(c[0])
-    for col in df.columns:
-        if col not in ('JMENO', 'PRIJMENI', 'TITULPRED', 'TITULZA', 'POVOLANI', 'BYDLISTEN', 'NAZEV_VS', 'PLATNOST'):
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-    return df
-
-
-def hl(df, c):
-    return df[f'HLASY_{int(c):02d}'].fillna(0).astype(float)
+def obhajce(c, ob, y):
+    return bool(RX_SEN.search(str(c.POVOLANI))) or VITEZ.get((ob, y - 6)) == f'{c.JMENO} {c.PRIJMENI}'.lower()
 
 
 def matrix(t5, obvod, a, b):
@@ -74,6 +54,12 @@ for y in YEARS:
     base = os.path.join(H, str(y))
     rk, t5 = load(base, 'serk'), load(base, 'set5')
     for ob, g in rk.groupby('OBVOD'):
+        z = g[(g.ZVOLEN_K1.fillna(0) == 1) | (g.ZVOLEN_K2.fillna(0) == 1)]  # 1 = zvolen, 2 = postup do 2. kola
+        if len(z):
+            VITEZ[(int(ob), y)] = f'{z.iloc[0].JMENO} {z.iloc[0].PRIJMENI}'.lower()
+        for c in g.itertuples():
+            if obhajce(c, int(ob), y):
+                OBH_VSE.append((y, int(ob), c.ZVOLEN_K1 == 1, c.ZVOLEN_K1 == 2, c.ZVOLEN_K2 == 1))
         f = g[g.HLASY_K2.fillna(0) > 0]
         if len(f) != 2:
             continue
@@ -92,7 +78,7 @@ for y in YEARS:
                           a_pct=round(float(a.HLASY_K1 / tot1 * 100), 2), b_pct=round(float(b.HLASY_K1 / tot1 * 100), 2),
                           ostatni_pct=round(float((tot1 - a.HLASY_K1 - b.HLASY_K1) / tot1 * 100), 2),
                           a_k2=int(a.HLASY_K2), b_k2=int(b.HLASY_K2), druhy_vyhral=bool(b.HLASY_K2 > a.HLASY_K2),
-                          okrsku=len(X), B=B, x1=x1))
+                          okrsku=len(X), B=B, x1=x1, obh_a=obhajce(a, int(ob), y), obh_b=obhajce(b, int(ob), y)))
 R = pd.DataFrame(races)
 R['naskok'] = R.a_pct - R.b_pct
 print('druhých kol', len(R), 'z toho Praha', int(R.praha.sum()), '| druhý z 1. kola vyhrál', int(R.druhy_vyhral.sum()))
@@ -101,7 +87,7 @@ print('druhých kol', len(R), 'z toho Praha', int(R.praha.sum()), '| druhý z 1.
 # ---------------------------------------------------------------- A) logistická regrese
 def logit_fit(x, y, iters=50):
     Xd = np.c_[np.ones(len(x)), x]
-    beta = np.zeros(2)
+    beta = np.zeros(Xd.shape[1])
     for _ in range(iters):
         p = 1 / (1 + np.exp(-Xd @ beta))
         W = p * (1 - p) + 1e-9
@@ -110,7 +96,8 @@ def logit_fit(x, y, iters=50):
 
 
 def logit_p(beta, x):
-    return 1 / (1 + np.exp(-(beta[0] + beta[1] * np.asarray(x, float))))
+    x = np.asarray(x, float)
+    return 1 / (1 + np.exp(-(beta[0] + (x @ beta[1:] if len(beta) > 2 else beta[1] * x))))
 
 
 # ---------------------------------------------------------------- obvod 21, 1. kolo 2026
@@ -176,6 +163,52 @@ def score(p):
 
 
 base_rate = float(yv.mean())
+
+# ---------------------------------------------------------------- obhajoba mandátu (A1: náskok + obhájce vítěz / druhý; B: jen kola se stejnou situací)
+oa, ob_ = R.obh_a.values.astype(float), R.obh_b.values.astype(float)
+X1 = np.c_[x, oa, ob_]
+o21a = obhajce(g[g.PRIJMENI == LEAD].iloc[0], OBVOD, 2026)
+o21b = obhajce(g[g.PRIJMENI == RUN].iloc[0], OBVOD, 2026)
+x21_1 = np.array([naskok, float(o21a), float(o21b)])
+beta1 = logit_fit(X1, yv)
+Xd1 = np.c_[np.ones(len(X1)), X1]
+pp1 = 1 / (1 + np.exp(-Xd1 @ beta1))
+se1 = np.sqrt(np.diag(np.linalg.inv(Xd1.T @ (Xd1 * (pp1 * (1 - pp1))[:, None]))))
+pval1 = [math.erfc(abs(b_ / s_) / math.sqrt(2)) for b_, s_ in zip(beta1, se1)]
+pA1 = float(logit_p(beta1, x21_1[None])[0])
+boot1 = []
+for _ in range(2000):
+    ix = rng.integers(0, len(R), len(R))
+    boot1.append(float(logit_p(logit_fit(X1[ix], yv[ix]), x21_1[None])[0]))
+loo_A1 = np.array([logit_p(logit_fit(np.delete(X1, i, 0), np.delete(yv, i)), X1[i][None])[0] for i in range(len(R))])
+# stejná situace jako obvod 21 (vítěz 1. kola obhajuje, druhý ne)
+same = (oa == o21a) & (ob_ == o21b)
+pB_obh = float((S[same].sablik > S[same].laska).mean())
+loo_B1 = []
+for i, r in enumerate(races):
+    m = [j for j in range(len(races)) if j != i and oa[j] == oa[i] and ob_[j] == ob_[i]]
+    m = m if len(m) >= 10 else [j for j in range(len(races)) if j != i]
+    loo_B1.append(float(np.mean([b > a for a, b in (apply(races[j]['B'], r['x1']) for j in m)])))
+loo_B1 = np.array(loo_B1)
+ll = lambda p: round(float(-np.mean(yv * np.log(np.clip(p, 1e-6, 1)) + (1 - yv) * np.log(np.clip(1 - p, 1e-6, 1)))), 4)
+skup = []
+for (a_, b_), nm in (((1, 0), 'vítěz 1. kola obhajuje'), ((0, 1), 'druhý z 1. kola obhajuje'), ((0, 0), 'nikdo neobhajuje'), ((1, 1), 'oba senátoři')):
+    mm = (oa == a_) & (ob_ == b_)
+    skup.append(dict(situace=nm, kol=int(mm.sum()), druhy_vyhral=int(yv[mm].sum()), pct=round(float(yv[mm].mean()) * 100, 1) if mm.any() else None,
+                     naskok_median=round(float(np.median(x[mm])), 1) if mm.any() else None))
+obhajoba = dict(laska_obhajuje=bool(o21a), sablik_obhajuje=bool(o21b), skupiny=skup,
+                model_a1=dict(p=round(pA1 * 100, 1), p05=round(float(np.percentile(boot1, 5)) * 100, 1), p95=round(float(np.percentile(boot1, 95)) * 100, 1),
+                              beta=dict(zip(['konstanta', 'naskok', 'obhajce_vitez', 'obhajce_druhy'], [round(float(b_), 3) for b_ in beta1])),
+                              se=dict(zip(['konstanta', 'naskok', 'obhajce_vitez', 'obhajce_druhy'], [round(float(s_), 3) for s_ in se1])),
+                              p_hodnota=dict(zip(['konstanta', 'naskok', 'obhajce_vitez', 'obhajce_druhy'], [round(float(q), 4) for q in pval1]))),
+                obhajci_celkem=dict(kandidovalo=len(OBH_VSE), vyhrali_v_1_kole=int(sum(o[2] for o in OBH_VSE)), ve_2_kole=int(sum(o[3] for o in OBH_VSE)),
+                                    vyhrali_ve_2_kole=int(sum(o[3] and o[4] for o in OBH_VSE))),
+                model_b1=dict(p=round(pB_obh * 100, 1), kol=int(same.sum())),
+                overeni={'A': dict(brier=round(float(np.mean((loo_A - yv) ** 2)), 4), logloss=ll(loo_A)),
+                         'A1': dict(brier=round(float(np.mean((loo_A1 - yv) ** 2)), 4), logloss=ll(loo_A1)),
+                         'B': dict(brier=round(float(np.mean((loo_B - yv) ** 2)), 4), logloss=ll(loo_B)),
+                         'B1': dict(brier=round(float(np.mean((loo_B1 - yv) ** 2)), 4), logloss=ll(loo_B1))})
+print('obhajoba', json.dumps(obhajoba, ensure_ascii=False))
 val = dict(A=score(loo_A), B=score(loo_B), zakladni=score(np.full(len(yv), base_rate)), druhych_kol=len(R))
 print('B: P =', round(pB, 3), 'bod zvratu', np.round(np.nanpercentile(f_need, [25, 50, 75]), 3), 'Praha', round(pB_praha, 3), '| ověření', val)
 
@@ -193,7 +226,7 @@ data['senat_predikce'] = dict(
     model_a=dict(p=round(pA * 100, 1), p05=round(float(pA_lo) * 100, 1), p95=round(float(pA_hi) * 100, 1),
                  beta=[round(float(b), 4) for b in beta],
                  krivka=[dict(naskok=float(n), p=round(float(logit_p(beta, n)) * 100, 1)) for n in np.arange(0, 30.5, 0.5)],
-                 body=[dict(naskok=round(float(r.naskok), 2), druhy_vyhral=bool(r.druhy_vyhral), rok=int(r.rok), obvod=int(r.obvod), praha=bool(r.praha),
+                 body=[dict(naskok=round(float(r.naskok), 2), druhy_vyhral=bool(r.druhy_vyhral), obh_a=bool(r.obh_a), obh_b=bool(r.obh_b), rok=int(r.rok), obvod=int(r.obvod), praha=bool(r.praha),
                             text=f'{r.rok}, obvod {r.obvod}: {r.vitez_k1} {r.a_pct:.1f} % × {r.druhy_k1} {r.b_pct:.1f} %') for r in R.itertuples()]),
     model_b=dict(p=round(pB * 100, 1), p_praha=round(pB_praha * 100, 1), kol_praha=int(S.praha.sum()),
                  rozdil_median=round(float(S.rozdil_pct.median()), 1), rozdil_p05=round(float(S.rozdil_pct.quantile(0.05)), 1), rozdil_p95=round(float(S.rozdil_pct.quantile(0.95)), 1),
@@ -204,5 +237,6 @@ data['senat_predikce'] = dict(
                              nevolici_prisli=med(par[:, 3, 0] + par[:, 3, 1])),
                  simulace=[dict(rok=int(s.rok), obvod=int(s.obvod), praha=bool(s.praha), rozdil=round(float(s.rozdil_pct), 2), ucast=round(float(s.ucast), 1)) for s in S.itertuples()]),
     overeni=val,
+    obhajoba=obhajoba,
 )
 save(data, os.path.join(OUT, 'data.json'))

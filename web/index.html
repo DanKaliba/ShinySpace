@@ -6,7 +6,7 @@
 <title>Piráti Praha 5 – volby 2026</title>
 <meta name="description" content="Analýza výsledků Pirátů v komunálních volbách 2026 v Praze a na Praze 5 po volebních okrscích, srovnání s rokem 2022 a sněmovními volbami 2025, senát a kampaňové akce.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=20261015e">
+<link rel="stylesheet" href="style.css?v=20261016a">
 </head>
 <body>
 <header class="top" id="top">
@@ -260,6 +260,14 @@
         <div class="legend" id="lg-senpred-b"></div>
       </figure>
     </div>
+    <div id="senok-text" class="prose"></div>
+    <div class="grid2">
+      <figure class="card"><figcaption>Zpětný test metod pro okrsky (231 druhých kol 2008–2024)</figcaption>
+        <div class="tablewrap"><table class="data" id="tb-senok-metody"></table></div>
+        <p class="small">CRPS = typická chyba předpovězeného rozdělení podílu v okrsku bez znalosti výsledku obvodu (nižší = lepší); pokrytí = jak často skutečnost padla do 80% intervalu. Bodové metody hodnoceny chybou při známém výsledku obvodu. Každé kolo předpovězeno bez sebe sama.</p></figure>
+      <figure class="card"><figcaption>Okrsky obvodu 21 (Praha 5 a Praha 13): předpověď 2. kola – podíl Sáblíka, 80% interval</figcaption>
+        <div class="tablewrap tall"><table class="data sortable" id="tb-senok"></table></div></figure>
+    </div>
     <div class="grid2">
       <figure class="card">
         <figcaption>Okrsky: korelace podílu senátních kandidátů s výsledky Pirátů</figcaption>
@@ -394,6 +402,6 @@
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="app.js?v=20261015e"></script>
+<script src="app.js?v=20261016a"></script>
 </body>
 </html>

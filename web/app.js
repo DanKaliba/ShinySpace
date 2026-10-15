@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261015a').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261015b').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -680,6 +680,74 @@ function init(D) {
     { k: 'obvod', label: 'Obvod', n: 1, f: (r) => r.obvod }, { k: 'jmeno', label: 'Kandidát', f: (r) => `${esc(r.jmeno)}${r.pir ? ' <b>(s Piráty)</b>' : ''}` },
     { k: 'pct', label: '1. kolo', n: 1, f: (r) => pct(r.pct, 2) }, { k: 'postup', label: '', f: (r) => (r.postup ? '2. kolo' : '') },
   ], D.senat.ostatni_praha.filter((r) => r.pct >= 5));
+
+  /* Předpověď 2. kola */
+  if (D.senat_predikce) {
+    const SP = D.senat_predikce, MA = SP.model_a, MB = SP.model_b, HI = SP.historie, OV = SP.overeni, VZ = MB.vzorce;
+    const t6 = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+    $('#senpred-tiles').innerHTML =
+      t6('Model A: šance Sáblíka', pct(MA.p, 0), `90% interval ${nf(MA.p05, 0)}–${nf(MA.p95, 0)} % · podle náskoku ${pp(SP.naskok_pb)} v 1. kole`) +
+      t6('Model B: šance Sáblíka', pct(MB.p, 0), `podíl z ${HI.druhych_kol} vzorců přesunů, se kterými by vyhrál · jen pražské: ${pct(MB.p_praha, 0)}`) +
+      t6('Podobný náskok v minulosti', `${HI.podobny_naskok.druhy_vyhral} z ${HI.podobny_naskok.kol}`, `druhých kol s náskokem ${nf(HI.podobny_naskok.od)}–${nf(HI.podobny_naskok.do)} p. b. vyhrál druhý z 1. kola`) +
+      t6('Bod zvratu', pct(MB.potreba_z_ostatnich.median, 0), `voličů vypadlých kandidátů, kteří přijdou, by musel získat Sáblík (medián; obvykle jich přijde ${pct(VZ.ostatni_k_vitezi + VZ.ostatni_k_druhemu, 0)})`);
+    $('#senpred-text').innerHTML = `<p>Václav Láska vede po 1. kole o ${int(SP.k1.laska - SP.k1.sablik)} hlasů (${pp(SP.naskok_pb)}). Šanci Radka Sáblíka odhadují dva nezávislé modely postavené na všech ${HI.druhych_kol} druhých kolech senátních voleb ${HI.roky} (z toho ${HI.praha} v Praze). Druhý z 1. kola v nich vyhrál ${HI.druhy_vyhral}× (${pct(HI.druhy_vyhral_pct, 0)}), v Praze ${HI.praha_druhy_vyhral}× z ${HI.praha}.</p>
+      <p><b>Model A (historický)</b> je logistická regrese: pravděpodobnost, že vyhraje druhý z 1. kola, podle náskoku vítěze. Pro náskok ${pp(SP.naskok_pb)} vychází <b>${pct(MA.p, 0)}</b> (bootstrap, 90% interval ${nf(MA.p05, 0)}–${nf(MA.p95, 0)} %).</p>
+      <p><b>Model B (přesuny voličů)</b> odhaduje v každém minulém druhém kole ekologickou inferencí z okrsků, kolik voličů obou finalistů přišlo znovu, kam šli voliči vypadlých kandidátů a kolik lidí přišlo navíc. Každý z ${HI.druhych_kol} vzorců pak použije na výsledek 1. kola v obvodu 21. Typicky přijde znovu ${pct(VZ.vitez_znovu, 0)} voličů vítěze 1. kola a ${pct(VZ.druhy_znovu, 0)} voličů druhého; z voličů vypadlých kandidátů ${pct(VZ.ostatni_neprisli, 0)} nepřijde, ${pct(VZ.ostatni_k_vitezi, 0)} volí vítěze 1. kola a ${pct(VZ.ostatni_k_druhemu, 0)} druhého. Sáblík vyhraje se <b>${pct(MB.p, 0)}</b> vzorců (s pražskými ${pct(MB.p_praha, 0)}). Medián výsledku je Láska o ${nf(-MB.rozdil_median)} p. b. před Sáblíkem při účasti asi ${pct(MB.ucast_median, 0)}.</p>
+      <p><b>Ověření na minulých volbách:</b> každé minulé druhé kolo jsme předpověděli bez něj samotného. Brierovo skóre (nižší = lepší): model A ${nf(OV.A.brier, 3)}, model B ${nf(OV.B.brier, 3)}, prostý odhad „druhý vyhrává v ${pct(HI.druhy_vyhral_pct, 0)} případů“ ${nf(OV.zakladni.brier, 3)}. Oba modely jsou lepší než prostý průměr, překvapení ale nejsou vzácná – druhý z 1. kola vyhrává zhruba každé páté druhé kolo.</p>
+      <p><b>Co modely nevědí:</b> kdo kandiduje a koho podpořili vypadlí kandidáti. Šarapatka (${pct(sarK.pct)}) byl silnější tam, kde jsou silní Piráti a STAN, a slabší tam, kde je silný SEN – to Sáblíkovi mírně nahrává. Rozhodne hlavně to, kolik Šarapatkových voličů přijde a jak se rozdělí: Sáblík by podle modelu B potřeboval asi ${pct(MB.potreba_z_ostatnich.median, 0)} voličů vypadlých kandidátů, kteří přijdou (v polovině vzorců ${nf(MB.potreba_z_ostatnich.p25, 0)}–${nf(MB.potreba_z_ostatnich.p75, 0)} %). Po 2. kole sem doplníme skutečný výsledek a odhad, kam se Šarapatkovi voliči přesunuli.</p>`;
+    // A: křivka modelu + skutečný podíl výher druhého po 3 p. b.
+    (() => {
+      const box = $('#ch-senpred-a'), W = 560, H = 320, L = 48, R = 16, T = 16, B = 44, XM = 30;
+      const s = svgRoot(box, W, H), X = (v) => L + (v / XM) * (W - L - R), Y = (v) => H - B - (v / 100) * (H - T - B);
+      for (let v = 0; v <= 100; v += 25) { el('line', { x1: L, x2: W - R, y1: Y(v), y2: Y(v), class: v ? 'grid' : 'axis' }, s); el('text', { x: L - 6, y: Y(v) + 4, 'text-anchor': 'end' }, s).textContent = v + ' %'; }
+      for (let v = 0; v <= XM; v += 5) el('text', { x: X(v), y: H - B + 16, 'text-anchor': 'middle' }, s).textContent = v;
+      el('text', { x: (L + W - R) / 2, y: H - 6, 'text-anchor': 'middle' }, s).textContent = 'náskok vítěze 1. kola (p. b.)';
+      const bins = [];
+      for (let a = 0; a < XM; a += 3) {
+        const P = MA.body.filter((b) => b.naskok >= a && b.naskok < a + 3);
+        if (P.length) bins.push({ a, n: P.length, w: P.filter((b) => b.druhy_vyhral).length, P });
+      }
+      el('path', { d: MA.krivka.filter((k) => k.naskok <= XM).map((k, i) => `${i ? 'L' : 'M'}${X(k.naskok)},${Y(k.p)}`).join(''), fill: 'none', stroke: css('--s1'), 'stroke-width': 2 }, s);
+      bins.forEach((b) => {
+        const g = el('g', {}, s);
+        el('rect', { x: X(b.a), y: T, width: X(3) - X(0), height: H - T - B, fill: 'transparent' }, g);
+        el('circle', { cx: X(b.a + 1.5), cy: Y((b.w / b.n) * 100), r: Math.max(4, Math.min(11, 2 + Math.sqrt(b.n) * 1.3)), fill: css('--gray-mark'), stroke: css('--surface'), 'stroke-width': 2 }, g);
+        hover(g, `<b>Náskok ${b.a}–${b.a + 3} p. b.</b><br>druhý vyhrál ${b.w} z ${b.n} kol (${pct((b.w / b.n) * 100, 0)})` +
+          (b.w ? '<br>' + b.P.filter((p) => p.druhy_vyhral).slice(0, 6).map((p) => esc(p.text)).join('<br>') : ''));
+      });
+      const g = el('g', {}, s), x0 = X(SP.naskok_pb);
+      el('line', { x1: x0, x2: x0, y1: T, y2: H - B, stroke: css('--ink'), 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, g);
+      el('circle', { cx: x0, cy: Y(MA.p), r: 6, fill: css('--ink'), stroke: css('--surface'), 'stroke-width': 2 }, g);
+      el('text', { x: x0 + 8, y: T + 12, class: 'lbl' }, g).textContent = `obvod 21 (náskok ${nf(SP.naskok_pb)} p. b.): ${nf(MA.p, 0)} %`;
+      hover(g, `<b>Obvod 21</b><br>náskok ${pp(SP.naskok_pb)}<br>šance Sáblíka ${pct(MA.p, 0)} (90% ${nf(MA.p05, 0)}–${nf(MA.p95, 0)} %)`);
+      $('#lg-senpred-a').innerHTML = `<span><span class="sw" style="background:${css('--s1')}"></span>model (logistická regrese)</span><span><span class="sw" style="background:${css('--gray-mark')}"></span>skutečný podíl výher druhého (velikost = počet kol)</span>`;
+      tableToggle(box, ['náskok (p. b.)', 'kol', 'druhý vyhrál', 'podíl'], bins.map((b) => [`${b.a}–${b.a + 3}`, b.n, b.w, pct((b.w / b.n) * 100, 0)]));
+    })();
+    // B: histogram výsledků obvodu 21 podle vzorců minulých kol (Sáblík − Láska, p. b.)
+    (() => {
+      const box = $('#ch-senpred-b'), W = 560, H = 320, L = 40, R = 16, T = 16, B = 44, st = 4;
+      const v = MB.simulace.map((x) => x.rozdil), lo = Math.floor(Math.min(...v) / st) * st, hi = Math.ceil(Math.max(...v) / st) * st;
+      const bins = [];
+      for (let a = lo; a < hi; a += st) bins.push({ a, P: MB.simulace.filter((x) => x.rozdil >= a && x.rozdil < a + st) });
+      const mx = Math.max(...bins.map((b) => b.P.length));
+      const s = svgRoot(box, W, H), X = (q) => L + ((q - lo) / (hi - lo)) * (W - L - R), Y = (q) => H - B - (q / mx) * (H - T - B);
+      for (let q = 0; q <= mx; q += mx > 40 ? 10 : 5) { el('line', { x1: L, x2: W - R, y1: Y(q), y2: Y(q), class: q ? 'grid' : 'axis' }, s); el('text', { x: L - 6, y: Y(q) + 4, 'text-anchor': 'end' }, s).textContent = q; }
+      for (let q = Math.ceil(lo / 10) * 10; q <= hi; q += 10) el('text', { x: X(q), y: H - B + 16, 'text-anchor': 'middle' }, s).textContent = q > 0 ? '+' + q : String(q).replace('-', '−');
+      el('text', { x: (L + W - R) / 2, y: H - 6, 'text-anchor': 'middle' }, s).textContent = 'Sáblík − Láska ve 2. kole (p. b.)';
+      const cS = css('--s1'), cL = css('--s3');
+      bins.forEach((b) => {
+        if (!b.P.length) return;
+        const g = el('g', {}, s), x = X(b.a) + 1, w = X(b.a + st) - X(b.a) - 2, y = Y(b.P.length), h = Y(0) - y;
+        el('rect', { x, y: T, width: w, height: H - T - B, fill: 'transparent' }, g);
+        el('path', { d: `M${x},${Y(0)} v${-Math.max(0, h - 4)} a4,4 0 0 1 4,-4 h${w - 8} a4,4 0 0 1 4,4 v${Math.max(0, h - 4)} z`, fill: b.a >= 0 ? cS : cL }, g);
+        hover(g, `<b>${b.a > 0 ? '+' : ''}${b.a} až ${b.a + st > 0 ? '+' : ''}${b.a + st} p. b.</b><br>${b.P.length} vzorců (${b.a >= 0 ? 'vyhrává Sáblík' : 'vyhrává Láska'})<br>` +
+          b.P.slice(0, 5).map((p) => `${p.rok}, obvod ${p.obvod}${p.praha ? ' (Praha)' : ''}`).join('<br>'));
+      });
+      el('line', { x1: X(0), x2: X(0), y1: T, y2: H - B, stroke: css('--ink'), 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, s);
+      $('#lg-senpred-b').innerHTML = `<span><span class="sw" style="background:${cL}"></span>vyhrává Láska</span><span><span class="sw" style="background:${cS}"></span>vyhrává Sáblík (${pct(MB.p, 0)} vzorců)</span>`;
+      tableToggle(box, ['Sáblík − Láska (p. b.)', 'vzorců'], bins.filter((b) => b.P.length).map((b) => [`${b.a} až ${b.a + st}`, b.P.length]));
+    })();
+  }
 
   if (RZ.senat_korelace) {
     const sk = [...RZ.senat_korelace].sort((a, b) => b.pct_p5 - a.pct_p5);

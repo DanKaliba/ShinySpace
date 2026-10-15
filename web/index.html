@@ -6,7 +6,7 @@
 <title>Piráti Praha 5 – volby 2026</title>
 <meta name="description" content="Analýza výsledků Pirátů v komunálních volbách 2026 v Praze a na Praze 5 po volebních okrscích, srovnání s rokem 2022 a sněmovními volbami 2025, senát a kampaňové akce.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=20261015a">
+<link rel="stylesheet" href="style.css?v=20261015b">
 </head>
 <body>
 <header class="top" id="top">
@@ -244,6 +244,21 @@
         <div class="tablewrap"><table class="data" id="tb-senat-praha"></table></div>
       </figure>
     </div>
+    <h3 id="sen-pred">Předpověď 2. kola: Láska × Sáblík (16.–17. 10.)</h3>
+    <div id="senpred-tiles" class="tiles"></div>
+    <div id="senpred-text" class="prose"></div>
+    <div class="grid2">
+      <figure class="card">
+        <figcaption>Model A: jak často vyhrál druhý z 1. kola podle náskoku vítěze (všechna druhá kola 2008–2024)</figcaption>
+        <div id="ch-senpred-a"></div>
+        <div class="legend" id="lg-senpred-a"></div>
+      </figure>
+      <figure class="card">
+        <figcaption>Model B: výsledek obvodu 21 se vzorci přesunů voličů z každého minulého druhého kola</figcaption>
+        <div id="ch-senpred-b"></div>
+        <div class="legend" id="lg-senpred-b"></div>
+      </figure>
+    </div>
     <div class="grid2">
       <figure class="card">
         <figcaption>Okrsky: korelace podílu senátních kandidátů s výsledky Pirátů</figcaption>
@@ -372,6 +387,6 @@
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="app.js?v=20261015a"></script>
+<script src="app.js?v=20261015b"></script>
 </body>
 </html>

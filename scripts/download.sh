@@ -9,6 +9,14 @@ for f in kv2026/KV2026_data_20261011_csv kv2026/KV2026reg20261011_csv kv2026/KV2
          ps2025/PS2025data20251005_csv ps2025/PS2025reg20251005_csv; do
   n=$(basename "$f"); mkdir -p "$n"; curl -sSL -o "$n/$n.zip" "$B/$f.zip"; (cd "$n" && unzip -oq "$n.zip")
 done
+# senátní volby 2008–2024 (druhá kola pro předpověď 2. kola 2026), www.volby.cz/opendata
+mkdir -p senat_hist
+for f in 2008:SE2008data.zip 2008:SE2008reg.zip 2010:SE2010data.zip 2010:SE2010reg.zip 2012:SE2012data.zip 2012:SE2012reg.zip \
+         2014:SE2014data20141018.zip 2014:SE2014reg20141018.zip 2016:SE2016data20161015.zip 2016:SE2016reg20161015.zip \
+         2018:SENAT2018_data_20181013_k2_csv.zip 2018:SE2018reg20181013_csv.zip 2020:SENAT2020_data_20201010_k2_csv.zip 2020:SE2020reg20201010_csv.zip \
+         2022:SE2022_data_20221001_k2_csv.zip 2022:SE2022reg20221001_csv.zip 2024:SE2024data20240928_csv.zip 2024:SE2024reg20240928_csv.zip; do
+  y=${f%%:*}; z=${f#*:}; mkdir -p "senat_hist/$y"; curl -sSL -o "senat_hist/$y/$z" "https://www.volby.cz/opendata/se$y/$z"; (cd "senat_hist/$y" && unzip -oq "$z")
+done
 mkdir -p geo && curl -sSL -o geo/kv2022_geo_vol_okrsky_2022g100.geojson "$B/kv2022/geo/vol_okrsky_2022g100.geojson"
 # zápisy do škol (Internet Archive) a spádové obvody ZŠ
 mkdir -p zapis/wb spad

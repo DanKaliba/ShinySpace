@@ -38,11 +38,12 @@ python scripts/doplneni.py dl data                        # věk 2026, MČ × ma
 python scripts/ei_shrink.py dl data                       # Sankey: test smrštění (křížová validace) a citlivost toků do nevoličů
 python scripts/forenzni.py dl data                        # kontrola dat okrsků P5, přepočet mandátů všech MČ, rozhodující marže
 python scripts/hledani.py dl data                         # kde hledat hlasy na 4. mandát (stáhne i dávky s časem zpracování)
+python scripts/senat_predikce.py dl data                  # předpověď 2. kola Senátu z druhých kol 2008–2024
 python scripts/export_csv.py data                         # CSV pro Excel – vždy jako poslední krok
 ```
 
 `volby_source/` = interní podklady (kalendář akcí z Notionu, Okrsky.docx, mapování okrsků na čtvrti) – do repozitáře nepatří
-(je v `.gitignore`). Web obsahuje jen veřejné akce bez jmen organizátorů. 2. kolo Senátu (16.–17. 10.) zatím v datech není.
+(je v `.gitignore`). Web obsahuje jen veřejné akce bez jmen organizátorů. 2. kolo Senátu (16.–17. 10.) zatím v datech není – web ukazuje jeho předpověď.
 
 Zdroje: ČSÚ – [volby.gov.cz](https://volby.gov.cz/opendata/opendata.htm), systém zápisů MČ Praha 5 (přes Internet Archive),
 [spadovostpraha.cz](https://www.spadovostpraha.cz/), podkladové mapy © Esri.

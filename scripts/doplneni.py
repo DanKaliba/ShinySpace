@@ -329,24 +329,64 @@ out['monte_carlo'] = dict(oficialne=int(s0[ip_]), simulaci=sim_n,
 print('h)', out['monte_carlo'])
 
 # ---------------------------------------------------------------- i) srovnání s ostatními MČ
-mc = pd.DataFrame(data['mc'])
-mcp = mc[mc.mc_2022.notna() & mc.mc_2026.notna() & (mc.mc_samostatne_2022 == True) & (mc.mc_samostatne_2026 == True)].copy()
-mcp['d_mc'] = mcp.mc_2026 - mcp.mc_2022
-mcp['d_mag'] = mcp.mag_2026 - mcp.mag_2022
+# Pirátský blok MČ = Piráti (samostatně i s nezávislými) + strany, se kterými kandidovali v koalici v roce 2022 nebo 2026.
+# Do bloku se počítá kandidátka, která obsahuje stranu bloku a žádnou jinou stranu (nezávislí kód 080 nevadí) – tak se v roce,
+# kdy partner kandidoval zvlášť, sečte jeho samostatná kandidátka, ale ne velká koalice, ve které byl jen jako menšinový člen.
+# Totéž na magistrátu v okrscích MČ (Piráti, případně Praha sobě nebo STAN). Model: změna bloku v MČ ~ změna na magistrátu,
+# odhadnutý jen na srovnatelných MČ (Piráti sami nebo s nezávislými v obou volbách, aspoň 5 000 voličů), vážený počtem voličů.
+# Koalice se změnou složení a malé MČ s místní dynamikou (Petrovice) se změří stejným modelem, ale do odhadu nevstupují.
+PARTNER = {'720': 'Piráti', '1180': 'Praha sobě', '005': 'Zelení', '166': 'STAN', '001': 'KDU-ČSL', '721': 'TOP 09', '053': 'ODS', '795': 'LES'}
+kody = lambda sl: set(str(sl).split(','))
+rows = []
+ros26 = KV[2026][2]
+for kod in sorted(set(ros26[(ros26.OKRES == 1100) & (ros26.KODZASTUP != MAG)].KODZASTUP)):
+    lst = {y: KV[y][2][KV[y][2].KODZASTUP == kod] for y in (2022, 2026)}
+    pir = {y: lst[y][lst[y].SLOZENI.map(lambda sl: '720' in kody(sl))] for y in lst}
+    if any(len(pir[y]) == 0 for y in pir):
+        continue
+    blok = set().union(*[kody(pir[y].SLOZENI.iloc[0]) for y in pir]) - {'080'}
+    vblok = lambda sl: bool(kody(sl) & blok) and kody(sl) <= blok | {'080'}
+    loc, mag, vol = {}, {}, None
+    for y in (2022, 2026):
+        loc[y] = float(lst[y][lst[y].SLOZENI.map(vblok)].PROCHLSTR.astype(float).sum())
+        t3, hl, ros = KV[y]
+        t = t3[(t3.OBEC == kod) & (t3.KODZASTUP == MAG)]
+        rm = ros[ros.KODZASTUP == MAG]
+        por = set(rm[rm.SLOZENI.map(vblok)].POR_STR_HL)
+        h = hl[hl.ID_OKRSKY.isin(set(t.ID_OKRSKY)) & hl.POR_STR_HL.isin(por)]
+        mag[y] = float(h.POC_HLASU.sum() / t.PL_HL_CELK.sum() * 100) if t.PL_HL_CELK.sum() else np.nan
+        if y == 2026:
+            vol = int(t3[(t3.KODZASTUP == kod)].VOL_SEZNAM.sum())
+    typ = {y: 'Piráti' if kody(pir[y].SLOZENI.iloc[0]) <= {'720', '080'} else 'Piráti + ' + ', '.join(PARTNER.get(c, c) for c in sorted(kody(pir[y].SLOZENI.iloc[0]) - {'720', '080'}))
+           for y in pir}
+    rows.append(dict(kod=int(kod), nazev=str(lst[2026].NAZEVZAST.iloc[0]), mc_2022=round(loc[2022], 2), mc_2026=round(loc[2026], 2), mag_2022=round(mag[2022], 2), mag_2026=round(mag[2026], 2),
+                     volici=vol, typ_2022=typ[2022], typ_2026=typ[2026], blok=', '.join(PARTNER.get(c, c) for c in sorted(blok)),
+                     ciste_piratske=typ[2022] == 'Piráti' and typ[2026] == 'Piráti', kandidatka_2026=str(pir[2026].NAZEVCELK.iloc[0])))
+mcp = pd.DataFrame(rows)
+mcp = mcp[(mcp.mc_2022 > 0) & (mcp.mag_2022 > 0)].copy()
 mcp['rel_mc'] = (mcp.mc_2026 / mcp.mc_2022 - 1) * 100
 mcp['rel_mag'] = (mcp.mag_2026 / mcp.mag_2022 - 1) * 100
-X_ = np.column_stack([np.ones(len(mcp)), mcp.rel_mag.values])
-b_, *_ = np.linalg.lstsq(X_, mcp.rel_mc.values, rcond=None)
-mcp['ocekavano'] = X_ @ b_
+mcp['srovnatelne'] = mcp.ciste_piratske & (mcp.volici >= 5000)
+mcp['proc_ne'] = np.where(mcp.srovnatelne, '', np.where(mcp.ciste_piratske, 'malá MČ (místní dynamika)',
+                          np.where(mcp.typ_2022 == mcp.typ_2026, 'koalice (stejné složení)', 'koalice (změna složení)')))
+fit_ = mcp[mcp.srovnatelne]
+wv = np.sqrt(fit_.volici.values / fit_.volici.mean())
+Xf = np.column_stack([np.ones(len(fit_)), fit_.rel_mag.values])
+b_, *_ = np.linalg.lstsq(Xf * wv[:, None], fit_.rel_mc.values * wv, rcond=None)
+mcp['ocekavano'] = b_[0] + b_[1] * mcp.rel_mag
 mcp['rezidual'] = mcp.rel_mc - mcp.ocekavano
-res_sd = float(mcp.rezidual.std())
+rf = mcp[mcp.srovnatelne].rezidual
+res_sd = float(np.sqrt(np.average(rf ** 2, weights=mcp[mcp.srovnatelne].volici) * len(rf) / (len(rf) - 2)))
 p5r = mcp[mcp.kod == P5].iloc[0]
+cp = mcp[mcp.srovnatelne]
 out['srovnani_mc'] = dict(
-    mc=[dict(nazev=r.nazev, mc_2022=r.mc_2022, mc_2026=r.mc_2026, rel_mc=round(r.rel_mc, 1), rel_mag=round(r.rel_mag, 1), ocekavano=round(r.ocekavano, 1),
-             rezidual=round(r.rezidual, 1), p5=bool(r.kod == P5)) for r in mcp.sort_values('rel_mc').itertuples()],
+    mc=[dict(nazev=r.nazev, mc_2022=r.mc_2022, mc_2026=r.mc_2026, mag_2022=r.mag_2022, mag_2026=r.mag_2026, rel_mc=round(r.rel_mc, 1), rel_mag=round(r.rel_mag, 1),
+             ocekavano=round(r.ocekavano, 1), rezidual=round(r.rezidual, 1), z=round(float(r.rezidual / res_sd), 2), volici=int(r.volici), typ_2022=r.typ_2022, typ_2026=r.typ_2026,
+             blok=r.blok, ciste_piratske=bool(r.ciste_piratske), srovnatelne=bool(r.srovnatelne), proc_ne=r.proc_ne, kandidatka_2026=r.kandidatka_2026, p5=bool(r.kod == P5)) for r in mcp.sort_values('rel_mc').itertuples()],
     p5=dict(rel_mc=round(float(p5r.rel_mc), 1), ocekavano=round(float(p5r.ocekavano), 1), rezidual=round(float(p5r.rezidual), 1), z=round(float(p5r.rezidual / res_sd), 2),
-            poradi=int((mcp.rel_mc > p5r.rel_mc).sum() + 1), z_kolika=int(len(mcp))),
-    model=dict(b0=round(float(b_[0]), 2), b1=round(float(b_[1]), 2), r=round(float(mcp.rel_mc.corr(mcp.rel_mag)), 2)),
+            poradi=int((cp.rezidual > p5r.rezidual).sum() + 1), z_kolika=int(len(cp)), vsech_mc=int(len(mcp))),
+    model=dict(b0=round(float(b_[0]), 2), b1=round(float(b_[1]), 2), r=round(float(cp.rel_mc.corr(cp.rel_mag)), 2), sd=round(res_sd, 1)),
+    mistni_lepe_nez_mag=int((cp.rel_mc > cp.rel_mag).sum()), srovnatelnych=int(len(cp)),
 )
 print('i)', out['srovnani_mc']['p5'], out['srovnani_mc']['model'])
 

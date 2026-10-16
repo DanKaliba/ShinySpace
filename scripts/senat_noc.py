@@ -1,7 +1,9 @@
 """Volební noc 2. kola Senátu (obvod 21): průběžný poměrový odhad konečného výsledku ze sečtených okrsků.
 
 python -P scripts/senat_noc.py <dl_dir> <out_dir> --test        zpětný test na minulých druhých kolech (2008–2024)
-python -P scripts/senat_noc.py <dl_dir> <out_dir> --live [s]    stahuje volby.gov.cz každých s sekund (výchozí 90) a píše <out_dir>/noc.html
+python -P scripts/senat_noc.py <dl_dir> <out_dir> --live [s]    každých s sekund (výchozí 900) zkontroluje volby.gov.cz a píše <out_dir>/noc.html
+    šetří data (hotspot): nejdřív 2 souhrny za obce (~2 kB); okrsky stahuje jen při změně a jen ty dosud nesečtené
+    (sečtené si pamatuje v <out_dir>/raw, i po restartu); výpadek spojení jen přeskočí kolo
 python -P scripts/senat_noc.py <dl_dir> <out_dir> --jednou      jedno stažení a přepočet (např. pro kontrolu)
 
 Metody (nebayesovské):
@@ -21,10 +23,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from senat_data import load  # noqa: E402
 
 DL, OUT, MODE = sys.argv[1], sys.argv[2], sys.argv[3]
-PERIOD = int(sys.argv[4]) if len(sys.argv) > 4 else 90
+PERIOD = int(sys.argv[4]) if len(sys.argv) > 4 else 900  # 15 min – běží z mobilního hotspotu
 OBVOD, LEAD, RUN = 21, 'Láska', 'Sáblík'
 MC = {500143: 'Praha 5', 539694: 'Praha 13'}
 API = 'https://volby.gov.cz/appdata/senat/20261009/vysled/okrsek/21/{obec}_{okrsek}.json'
+SOUHRN = 'https://volby.gov.cz/appdata/senat/20261009/vysled/obec/21/{obec}.json'  # ~1 kB, počet sečtených okrsků v obci
 rng = np.random.default_rng(2026)
 os.makedirs(OUT, exist_ok=True)
 
@@ -160,23 +163,49 @@ def kalibruj(pr, podil_secteno):
     return pr
 
 
-def stahni(obec, okrsek):
-    """Vrátí (hlasy Láska, hlasy Sáblík, odevzdané obálky) za 2. kolo, nebo None, pokud okrsek ještě není sečtený."""
+def nacti(url):
     try:
-        j = json.loads(urllib.request.urlopen(API.format(obec=obec, okrsek=okrsek), timeout=30).read().decode('utf8'))
+        return json.loads(urllib.request.urlopen(url, timeout=30).read().decode('utf8'))
     except Exception:
         return None
-    json.dump(j, open(os.path.join(RAW, f'{obec}_{okrsek}.json'), 'w', encoding='utf8'), ensure_ascii=False)
-    k2 = [p for p in j.get('prehled', []) if p and p[0] == 2]
-    if not k2:
+
+
+def rozbor(j):
+    """(hlasy Láska, hlasy Sáblík) za 2. kolo z JSON okrsku, nebo None, pokud okrsek ještě není sečtený."""
+    if not j or not [p for p in j.get('prehled', []) if p and p[0] == 2]:
         return None
-    hl = {}
-    for v in j.get('vysledky', []):
-        if v[0] in (ca, cb) and v[7] is not None:
-            hl[v[0]] = v[7]
-    if len(hl) < 2:
-        return None
-    return hl[ca], hl[cb], k2[0][5] if len(k2[0]) > 5 else None
+    hl = {v[0]: v[7] for v in j.get('vysledky', []) if v[0] in (ca, cb) and v[7] is not None}
+    return (hl[ca], hl[cb]) if len(hl) == 2 else None
+
+
+HOTOVE = {}  # (obec, okrsek) -> (Láska, Sáblík); sečtené okrsky se už znovu nestahují
+for f in os.listdir(RAW):
+    v = rozbor(json.load(open(os.path.join(RAW, f), encoding='utf8')))
+    if v:
+        HOTOVE[tuple(int(x) for x in f[:-5].split('_'))] = v
+
+
+def secteno_podle_souhrnu():
+    """Počet sečtených okrsků obvodu podle souhrnů obcí; None, když se nepodařilo stáhnout."""
+    n = 0
+    for obec in MC:
+        j = nacti(SOUHRN.format(obec=obec))
+        if j is None:
+            return None
+        k2 = [p for p in j.get('prehled', []) if p and p[0] == 2]
+        n += int(k2[0][2]) if k2 else 0
+    return n
+
+
+def stahni(obec, okrsek):
+    if (obec, okrsek) in HOTOVE:
+        return HOTOVE[(obec, okrsek)]
+    j = nacti(API.format(obec=obec, okrsek=okrsek))
+    v = rozbor(j)
+    if v:
+        json.dump(j, open(os.path.join(RAW, f'{obec}_{okrsek}.json'), 'w', encoding='utf8'), ensure_ascii=False)
+        HOTOVE[(obec, okrsek)] = v
+    return v
 
 
 def html(d, sec, pr, stamp):
@@ -205,6 +234,16 @@ td,th{{padding:4px 8px;border-bottom:1px solid #e6e6e1;text-align:right}}td:firs
 
 
 def kolo():
+    stamp = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    n = secteno_podle_souhrnu()
+    if n is None:
+        print(stamp, 'bez spojení – zkusím příště', flush=True)
+        return len(HOTOVE)
+    if n == len(HOTOVE) and (n == 0 or os.path.exists(os.path.join(OUT, 'noc.html'))):
+        print(stamp, f'beze změny (sečteno {n}/{len(base)})', flush=True)
+        if n == 0:
+            open(os.path.join(OUT, 'noc.html'), 'w', encoding='utf8').write(f'<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="60"><p>{stamp}: zatím žádný sečtený okrsek 2. kola.</p>')
+        return n
     d = base.copy()
     d['a2'] = np.nan; d['b2'] = np.nan
     for i, r in d.iterrows():
@@ -212,7 +251,6 @@ def kolo():
         if v:
             d.loc[i, 'a2'], d.loc[i, 'b2'] = v[0], v[1]
     sec = d.a2.notna()
-    stamp = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     if sec.sum() == 0:
         open(os.path.join(OUT, 'noc.html'), 'w', encoding='utf8').write(f'<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="60"><p>{stamp}: zatím žádný sečtený okrsek 2. kola.</p>')
         print(stamp, 'nic sečteno', flush=True)

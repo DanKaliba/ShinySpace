@@ -6,7 +6,7 @@
 <title>Piráti Praha 5 – volby 2026</title>
 <meta name="description" content="Analýza výsledků Pirátů v komunálních volbách 2026 v Praze a na Praze 5 po volebních okrscích, srovnání s rokem 2022 a sněmovními volbami 2025, senát a kampaňové akce.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=20261016b">
+<link rel="stylesheet" href="style.css?v=20261016d">
 </head>
 <body>
 <header class="top" id="top">
@@ -15,7 +15,7 @@
     <h1>Jak dopadli Piráti na Praze 5</h1>
     <p class="lede">Výsledky po všech 81 volebních okrscích Prahy 5: srovnání s komunálními volbami 2022 a sněmovními 2025, konkurence SENu a Starostů, senátní obvod 21 a&nbsp;co ukazují kampaňové akce.</p>
     <nav class="toc" aria-label="Obsah">
-      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#demografie">Demografie</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#kontrola">Kontrola dat</a><a href="#hledani">4. mandát</a><a href="#doplneni">Doplňky</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
+      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#demografie">Demografie</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#kontrola">Kontrola dat</a><a href="#hledani">4. mandát</a><a href="#doplneni">Doplňky</a><a href="#kuriozity">Kuriozity</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
     </nav>
   </div>
 </header>
@@ -385,6 +385,18 @@
       <div class="tablewrap"><table class="data" id="tb-d-ei"></table></div></figure>
   </section>
 
+  <section id="kuriozity">
+    <h2>Kuriozity: data správně, závěry na vlastní nebezpečí</h2>
+    <div id="kur-text" class="prose"></div>
+    <div class="grid2">
+      <figure class="card"><figcaption>1. Programátor, nebo důchodce? Povolání kandidátů do MČ v celé Praze (KV 2026)</figcaption><div id="ch-kur-povolani"></div><div class="legend" id="lg-kur-povolani"></div><p class="small" id="kur-povolani-note"></p></figure>
+      <figure class="card"><figcaption>2. Volte v sudém okrsku! Piráti v sudých a lichých okrscích Prahy 5</figcaption><div id="ch-kur-parita"></div><p class="small" id="kur-parita-note"></p></figure>
+      <figure class="card"><figcaption>3. Kde se volí, tam se volí: Piráti podle typu volební místnosti (Praha 5)</figcaption><div id="ch-kur-mistnost"></div><p class="small" id="kur-mistnost-note"></p></figure>
+      <figure class="card"><figcaption>4. Pirátské okrsky jsou sečtené dřív: čas sečtení × výsledek Pirátů (Praha 5)</figcaption><div id="ch-kur-cas"></div><p class="small" id="kur-cas-note"></p></figure>
+      <figure class="card"><figcaption>5. Titul před jménem: preferenční hlasy kandidátů do MČ v celé Praze (100 = průměr vlastní kandidátky)</figcaption><div id="ch-kur-titul"></div><p class="small" id="kur-titul-note"></p></figure>
+    </div>
+  </section>
+
   <section id="dalsi" class="prose">
     <div data-md="dalsi-pohledy.md"></div>
   </section>
@@ -402,6 +414,6 @@
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="app.js?v=20261016b"></script>
+<script src="app.js?v=20261016d"></script>
 </body>
 </html>

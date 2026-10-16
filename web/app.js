@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261016b').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261016d').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -885,6 +885,45 @@ function init(D) {
       { k: 'z', label: 'Hlasování' }, { k: 'n', label: 'Počet hodnot', n: 1, f: (r) => int(r.n) }, { k: 'chi2', label: 'χ²', n: 1, f: (r) => nf(r.chi2, 1) }, { k: 'p', label: 'p', n: 1, f: (r) => nf(r.p, 3) },
     ], Object.entries(F.benford).map(([z, v]) => ({ z, ...v })));
     $('#kon-benford-note').textContent = 'Benfordův test 2. číslice je jen hrubý ukazatel. V MČ (41 hlasů na voliče) data Benfordovu rozdělení odpovídají. Na magistrátu (65 hlasů na voliče) se od něj odchylují, to je ale u vícehlasých lístků očekávané: hlasy stran jsou přibližně násobky počtu lístků, a druhá číslice proto Benfordovo rozdělení mít nemusí. Nejde o známku manipulace; audit suchan.cz proto používá i další testy (Klimek, Kobak, Beber–Scacco), všechny v normě.';
+  }
+
+  /* Kuriozity */
+  if (D.kuriozity) {
+    const rn = (v) => nf(v, 2).replace('-', '−'), K = D.kuriozity, PA = K.parita, TI = K.titul, CA = K.cas, pv = K.povolani;
+    const pir = pv.find((r) => r.strana === 'Piráti'), ano = pv.find((r) => r.strana === 'ANO');
+    $('#kur-text').innerHTML = `<p>Všechna čísla v této sekci jsou spočítaná správně z dat ČSÚ. Jen z nich neplyne skoro nic – nebo něco úplně jiného, než napovídá titulek. Je to taky ukázka toho, proč korelace (dvě věci jdou spolu) neznamená příčinu (jedna způsobuje druhou), a proč se z výsledků okrsků nedá usuzovat na jednotlivé voliče (<a href="#metodika">ekologická chyba</a>). Pod každým grafem je vysvětlení, co se za ním skutečně skrývá.</p>`;
+    // 1) IT × důchodci
+    (() => {
+      const box = $('#ch-kur-povolani'), W = 560, rowH = 30, L = 100, R = 60, T = 6, H = T + pv.length * rowH + 22, mx = Math.max(...pv.flatMap((r) => [r.it, r.duchodci]));
+      const s = svgRoot(box, W, H), X = (v) => L + (v / mx) * (W - L - R), c1 = css('--s1'), c2 = css('--s4');
+      for (let v = 0; v <= mx; v += 5) { el('line', { x1: X(v), x2: X(v), y1: T, y2: H - 18, class: 'grid' }, s); el('text', { x: X(v), y: H - 4, 'text-anchor': 'middle' }, s).textContent = v + ' %'; }
+      pv.forEach((r, i) => {
+        const y = T + i * rowH, g = el('g', {}, s);
+        el('rect', { x: 0, y, width: W, height: rowH, fill: 'transparent' }, g);
+        el('text', { x: L - 8, y: y + rowH / 2 + 4, 'text-anchor': 'end', class: r.strana === 'Piráti' ? 'lbl' : '' }, g).textContent = r.strana;
+        [[r.it, c1, 4], [r.duchodci, c2, 15]].forEach(([v, c, dy]) => {
+          el('rect', { x: L, y: y + dy, width: Math.max(2, X(v) - L), height: 10, rx: 3, fill: c }, g);
+          el('text', { x: X(v) + 5, y: y + dy + 9 }, g).textContent = nf(v) + ' %';
+        });
+        hover(g, `<b>${esc(r.strana)}</b> – ${int(r.kandidatu)} kandidátů do MČ<br>IT / programátoři: ${pct(r.it)}<br>důchodci: ${pct(r.duchodci)}<br>medián věku: ${nf(r.vek, 0)} let`);
+      });
+      $('#lg-kur-povolani').innerHTML = `<span><span class="sw" style="background:${c1}"></span>IT, programátoři, vývojáři, data</span><span><span class="sw" style="background:${c2}"></span>důchodci</span>`;
+      tableToggle(box, ['strana', 'kandidátů', 'IT', 'důchodci', 'medián věku'], pv.map((r) => [r.strana, r.kandidatu, pct(r.it), pct(r.duchodci), nf(r.vek, 0)]));
+      $('#kur-povolani-note').innerHTML = `Na pirátské kandidátce je ${nf(pir.it / pir.duchodci, 0)}× víc lidí z IT než důchodců, u ANO je to ${nf(ano.duchodci / ano.it, 0)}× naopak. Tady je rozdíl skutečný – jen o voličích neříká nic: kandidátky skládají strany, ne voliči. Podle povolání, které kandidáti sami uvedli (${int(pv.reduce((a, r) => a + r.kandidatu, 0))} kandidátů, „IT“ = programátor, vývojář, software, data, digitalizace).`;
+    })();
+    // 2) sudé × liché
+    bars($('#ch-kur-parita'), [{ label: `sudé okrsky (${PA.sudych})`, v: PA.sude, hi: true }, { label: `liché okrsky (${PA.lichych})`, v: PA.liche }], { max: 10, d: 2 });
+    $('#kur-parita-note').innerHTML = `V sudých okrscích mají Piráti o ${nf(PA.rozdil, 2)} p. b. víc. Kdyby čísla okrsků přidělil někdo náhodně, vyšel by stejně velký nebo větší rozdíl v ${nf(PA.p * 100, 0)} % případů (permutační test) – je to čistá náhoda. Takhle vypadá „zjištění“, které by v dostatečně velké tabulce našel každý.`;
+    // 3) typ místnosti
+    bars($('#ch-kur-mistnost'), K.mistnost.map((r) => ({ label: `${r.typ.replace(/ \(.*\)$/, '')} (${r.okrsku})`, v: r.pirati, hi: r.zmena >= 0, txt: `${nf(r.pirati)} % (${pp(r.zmena)})`, note: `změna proti 2022: ${pp(r.zmena)} · ${r.okrsku} okrsků` })), { max: 15, noTable: false });
+    $('#kur-mistnost-note').innerHTML = `V okrscích, kde se volí na gymnáziu nebo v ZUŠ, Piráti neztratili; kde se volí v mateřské škole, ztratili ${nf(-K.mistnost.find((r) => r.typ === 'mateřská škola').zmena)} procentního bodu. Gymnázia a ZUŠ jsou ale jen 2–3 okrsky (v ZUŠ na Popelce volí i okrsek U Zvonu, kde Piráti vyrostli) – a místnost se vybírá podle toho, co v okrsku stojí, ne naopak. Volit chodí lidé z ulic okolo, ne žáci.`;
+    // 4) čas sečtení
+    scatter($('#ch-kur-cas'), CA.body.map((b) => ({ x: b.hodin, y: b.pirati, tip: `<b>Okrsek ${b.okrsek} · ${esc(b.ctvrt)}</b><br>sečteno ${nf(b.hodin, 1)} h po uzavření místností<br>Piráti ${pct(b.pirati)} · ${int(b.obalky)} obálek` })),
+      { xl: 'hodin od uzavření volebních místností (10. 10. 14:00)', yl: 'Piráti MČ 2026 (%)', fit: true });
+    $('#kur-cas-note').innerHTML = `Čím dřív byl okrsek sečtený, tím víc tam měli Piráti (r = ${rn(CA.r_pirati)}). Skutečný důvod: velké okrsky se sčítají déle (r = ${rn(CA.r_obalky)} mezi časem a počtem obálek) a Piráti mají ve velkých okrscích méně (r = ${rn(CA.r_pirati_obalky)}). Komise nikomu nenadržuje – jen přepočítat několik set obálek trvá déle než sto.`;
+    // 5) titul
+    bars($('#ch-kur-titul'), [{ label: 's titulem před jménem', v: TI.s_titulem * 100, hi: true, txt: nf(TI.s_titulem * 100, 1) }, { label: 'bez titulu', v: TI.bez_titulu * 100, txt: nf(TI.bez_titulu * 100, 1) }], { max: 110, unit: '' });
+    $('#kur-titul-note').innerHTML = `Kandidáti s titulem dostali o ${nf(TI.rozdil_pct, 1)} % víc preferenčních hlasů než kandidáti bez titulu, vždy měřeno proti průměru vlastní kandidátky (titul má ${int(TI.s_titulem_n)} z ${int(TI.kandidatu)} kandidátů). Část efektu jde na vrub toho, že lidé s titulem bývají na kandidátce výš (pořadí s hlasy souvisí: r = ${rn(TI.r_poradi)}); po zohlednění pořadí zbývá rozdíl asi ${nf(TI.rozdil_po_poradi * 100, 1)} bodu na stupnici, kde 100 = průměr kandidátky. Délka příjmení naopak nehraje žádnou roli (r = ${rn(TI.r_delka)}) – pro všechny Nováky a Procházky je to dobrá zpráva.`;
   }
 
   /* Kde hledat hlasy na 4. mandát */

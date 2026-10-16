@@ -38,6 +38,7 @@ python scripts/doplneni.py dl data                        # věk 2026, MČ × ma
 python scripts/ei_shrink.py dl data                       # Sankey: test smrštění (křížová validace) a citlivost toků do nevoličů
 python scripts/forenzni.py dl data                        # kontrola dat okrsků P5, přepočet mandátů všech MČ, rozhodující marže
 python scripts/hledani.py dl data                         # kde hledat hlasy na 4. mandát (stáhne i dávky s časem zpracování)
+python scripts/kuriozity.py dl data                       # Kuriozity (povolání kandidátů, sudé × liché okrsky, místnosti, čas sečtení, tituly)
 python scripts/senat_predikce.py dl data                  # předpověď 2. kola Senátu z druhých kol 2008–2024 (modely A, A1, B)
 python scripts/senat_okrsky.py dl data                    # 2. kolo po okrscích: výběr metody zpětným testem (~5 min)
 python scripts/senat_bayes.py dl data                     # 2. kolo po okrscích: bayesovský model + převážení na A1 (~15 min)

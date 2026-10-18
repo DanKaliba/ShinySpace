@@ -4,7 +4,7 @@ set -euo pipefail
 D=${1:-dl}; mkdir -p "$D"; cd "$D"
 B=https://volby.gov.cz/opendata
 for f in kv2026/KV2026_data_20261011_csv kv2026/KV2026reg20261011_csv kv2026/KV2026ciselniky20261011_csv \
-         se2026/SE2026data20261011_csv se2026/SE2026reg20261011_csv \
+         se2026/SE2026data20261011_csv se2026/SE2026reg20261011_csv se2026/SE2026data20261017_csv se2026/SE2026reg20261017_csv \
          kv2022/KV2022_data_20260328_csv kv2022/KV2022reg20260328_csv \
          ps2025/PS2025data20251005_csv ps2025/PS2025reg20251005_csv; do
   n=$(basename "$f"); mkdir -p "$n"; curl -sSL -o "$n/$n.zip" "$B/$f.zip"; (cd "$n" && unzip -oq "$n.zip")

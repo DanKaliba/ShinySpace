@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261016d').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261018c').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -383,6 +383,8 @@ function init(D) {
     { k: 'cen26_65', label: 'Senioři 65+ (2026)', br: [12, 14, 16, 18, 20], ramp: BLUE },
     { k: 'mc_minus_mag', label: 'Piráti MČ − magistrát', br: [-4, -2, -1, 0, 1], ramp: DIV, fmt: (v) => (v > 0 ? '+' : '') + nf(v, 0) },
     { k: 'senat_k2_sablik', label: 'Senát 2. kolo: předpověď', br: [40, 45, 50, 55, 60], ramp: ['#0e7a52', '#1baf7a', '#a3dcc5', '#b5d3f5', '#5a9be6', '#1f5fae'], fmt: (v) => nf(v, 0) + ' %', unit: ' Sáblík (zbytek Láska)' },
+    { k: 'senat_k2_skutecnost', label: 'Senát 2. kolo: výsledek', br: [40, 45, 50, 55, 60], ramp: ['#0e7a52', '#1baf7a', '#a3dcc5', '#b5d3f5', '#5a9be6', '#1f5fae'], fmt: (v) => nf(v, 0) + ' %', unit: ' Sáblík (zbytek Láska)' },
+    { k: 'senat_k2_rozdil', label: 'Senát 2. kolo: předpověď − výsledek', br: [-6, -2, 0, 2, 6], ramp: ['#1f5fae', '#5a9be6', '#b5d3f5', '#a3dcc5', '#1baf7a', '#0e7a52'], fmt: (v) => (v > 0 ? '+' : '') + nf(v, 1) + ' p. b.', unit: ' (záporné = Sáblík dopadl lépe, než jsme čekali)' },
     { k: 'hledani_skore', label: '4. mandát: kde hledat', br: [100, 200, 300, 450, 600], ramp: ORANGE, get: (o) => ((D.hledani || {}).okrsky || []).find((r) => r.okrsek === o.okrsek)?.skore, fmt: (v) => v },
     { k: 'pedersen', label: 'Volatilita (Pedersen)', br: [10, 13, 16, 19, 22], ramp: ORANGE, fmt: (v) => v },
     { k: 'akce', label: 'Akce', br: [1, 3, 6, 10, 14], ramp: BLUE, get: (o) => o.akci_kampan_do_700m, fmt: (v) => v, unit: ' akcí do 700 m' },
@@ -760,6 +762,7 @@ function init(D) {
   if (D.senat_okrsky) {
     const SO = D.senat_okrsky, OB = SO.obvod_sablik, best = SO.metody.find((m) => m.metoda === SO.metoda), p5o = SO.okrsky.filter((r) => r.p5);
     const ctv = (o) => (O.find((x) => x.okrsek === o) || {}).ctvrt || '';
+    const VYS = D.senat_vysledek ? Object.fromEntries(D.senat_vysledek.okrsky.map((r) => [r.okrsek, r])) : {};
     const BY = SO.bayes, TB = BY.test.bayes_empiricky.vse, TBP = BY.test.bayes_empiricky.praha, all = SO.okrsky, p13 = all.filter((r) => !r.p5);
     $('#senok-text').innerHTML = `<p><b>Předpověď po okrscích.</b> Rozložení mezi okrsky dává hierarchický bayesovský model: v každé ze 4 000 simulací se vezme celá tabulka přesunů voličů jednoho skutečného minulého druhého kola a každý okrsek se od ní náhodně odchýlí (podle toho, jak se okrsky odchylovaly v minulosti). Simulace jsou pak převážené tak, aby šance Sáblíka na celý obvod odpovídala modelu A1 (${pct(BY.p_obvod.bayes_empiricky_a1, 0)}); bez toho by vycházelo ${pct(BY.p_obvod.bayes_empiricky, 0)}. Podíl Sáblíka v obvodu: medián ${pct(OB.median, 0)}, 80% interval ${nf(OB.p10, 0)}–${nf(OB.p90, 0)} %.</p>
       <p>Metodu jsme vybrali zpětným testem na ${SO.druhych_kol} minulých druhých kolech (každé předpovězeno bez sebe sama): typická chyba předpovězeného rozdělení v okrsku (CRPS) ${nf(TB.crps, 2)} p. b., v Praze ${nf(TBP.crps, 2)}; 80% interval pokryl skutečnost v ${pct(TB.pokryti_80, 0)} okrsků (ideál 80 %). Nebayesovská kontrola (konformní intervaly) i jednodušší metody v tabulce vlevo vycházejí podobně. Podle mediánu by Sáblík vedl v ${p5o.filter((r) => r.sablik > 50).length} z ${p5o.length} okrsků Prahy 5 a v ${p13.filter((r) => r.sablik > 50).length} z ${p13.length} okrsků Prahy 13 – hlavně na Smíchově u Anděla a Arbesova náměstí a na Hřebenkách. Na mapě okrsků Prahy 5 je předpověď jako vrstva „Senát 2. kolo: předpověď“.</p>`;
@@ -776,7 +779,56 @@ function init(D) {
       { k: 'sablik', label: 'Předpověď Sáblík', n: 1, f: (r) => `<b>${pct(r.sablik, 0)}</b><br><span class="muted">${nf(r.sablik_p10, 0)}–${nf(r.sablik_p90, 0)} %</span>` },
       { k: 'p_sablik_vyhraje', label: 'Šance, že Sáblík vyhraje okrsek', n: 1, f: (r) => `<span class="${r.p_sablik_vyhraje >= 50 ? 'up' : ''}">${pct(r.p_sablik_vyhraje, 0)}</span>` },
       { k: 'ucast', label: 'Očekávaná účast', n: 1, f: (r) => pct(r.ucast, 0) },
+      ...(D.senat_vysledek ? [{ k: 'skut', label: 'Skutečnost 2. kolo', n: 1, sv: (r) => (VYS[r.okrsek] || {}).skutecnost, f: (r) => (VYS[r.okrsek] ? `<b>${pct(VYS[r.okrsek].skutecnost, 0)}</b><br><span class="muted">${int(VYS[r.okrsek].sablik_hlasy)} : ${int(VYS[r.okrsek].laska)} hlasů</span>` : '–') },
+        { k: 'roz', label: 'Předpověď − skutečnost', n: 1, sv: (r) => (VYS[r.okrsek] || {}).chyba, f: (r) => (VYS[r.okrsek] ? `<span class="${VYS[r.okrsek].skutecnost >= r.sablik_p10 && VYS[r.okrsek].skutecnost <= r.sablik_p90 ? '' : 'down'}">${pp(VYS[r.okrsek].chyba)}</span>` : '–') }] : []),
     ], all, { sort: 'sablik', desc: true, onRow: (r) => { if (r.p5) { select(r.okrsek, true); $('#map-p5').scrollIntoView({ behavior: 'smooth', block: 'center' }); } } });
+  }
+
+  /* Jak dopadla předpověď 2. kola */
+  if (D.senat_vysledek) {
+    const VV = D.senat_vysledek, PR = VV.predpoved, H = VV.okrsky_hodnoceni, M5 = H.praha5.model, MV = H.vse.model, NV = H.vse.naivni;
+    const t7 = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+    $('#senvys-tiles').innerHTML =
+      t7('Výsledek 2. kola', `Láska ${pct(100 - VV.sablik_pct, 1)}`, `Sáblík ${pct(VV.sablik_pct, 1)} · ${int(VV.laska)} : ${int(VV.sablik)} hlasů · účast ${pct(VV.ucast, 1)}`) +
+      t7('Sáblík: skutečnost × předpověď', pct(VV.sablik_pct, 1), `předpověď ${pct(PR.obvod.median, 1)} (80% interval ${nf(PR.obvod.p10, 0)}–${nf(PR.obvod.p90, 0)} %), šance Sáblíka byla ${pct(PR.p_a1, 0)}`) +
+      t7('Průměrná chyba v okrsku', `${nf(MV.mae, 1)} p. b.`, `Praha 5 ${nf(M5.mae, 1)}, Praha 13 ${nf(H.praha13.model.mae, 1)} · ${pct(MV.pokryti_80, 0)} okrsků v 80% intervalu`) +
+      t7('Okrsky, které vyhrál Sáblík', `${VV.sablik_vyhral.praha5} z 81`, `na Praze 5 (předpověď: ${VV.predpoved_vede.praha5}); na Praze 13 ${VV.sablik_vyhral.praha13} z 58 (předpověď: ${VV.predpoved_vede.praha13})`);
+    const pc = Object.entries(VV.posun_ctvrti), sab = pc.filter(([, v]) => v < -1.5).map(([k, v]) => `${k} (${pp(v).replace('−', '')})`), las = pc.filter(([, v]) => v > 1.5).map(([k]) => k);
+    $('#senvys-text').innerHTML = `<p><b>Vyhrál Václav Láska</b> (${pct(100 - VV.sablik_pct, 1)}), jak předpověď čekala jako pravděpodobnější výsledek. Podíl Sáblíka v celém obvodu vyšel ${pct(VV.sablik_pct, 1)}, předpověď byla ${pct(PR.obvod.median, 1)} – odchylka ${nf(Math.abs(VV.sablik_pct - PR.obvod.median), 1)} bodu, hluboko uvnitř 80% intervalu. Modely bez zohlednění obhajoby mandátu čekaly kolem 44 %; doplnění obhajoby předpověď zpřesnilo. Účast (${pct(VV.ucast, 1)}) předpověď přecenila asi o ${nf(VV.ucast_posun, 1)} bodu.</p>
+      <p><b>Okrsky:</b> předpověď se v okrsku minula průměrně o ${nf(MV.mae, 1)} procentního bodu a rozložení mezi okrsky vystihla (korelace se skutečností ${nf(MV.r, 2)}). Sáblíka ale mírně podcenila (o ${nf(-MV.posun, 1)} bodu): modely z minulých kol čekaly, že si ve 2. kole polepší vítěz 1. kola, ve skutečnosti si mírně polepšil Sáblík (podíl mezi finalisty ${pct(VV.k1_sablik_ze_dvou, 1)} v 1. kole → ${pct(VV.sablik_pct, 1)}). Proto stejně dobře vyšel i naivní odhad „jako v 1. kole“ (chyba ${nf(NV.mae, 1)}, správný vítěz v ${pct(NV.vitez_ok, 0)} okrsků proti ${pct(MV.vitez_ok, 0)}). Praha 5 vyšla téměř přesně (posun ${pp(M5.posun)}), na Praze 13 Sáblík přidal víc, než se čekalo (${pp(H.praha13.model.posun)}).</p>
+      <p><b>Kde se předpověď mýlila:</b> Sáblíka podcenila ${sab.length ? 'hlavně v čtvrtích ' + sab.join(', ') : ''}, naopak Láska dopadl lépe, než čekala, v čtvrtích ${las.join(', ')}. Kde byl v 1. kole silný Šarapatka (TOP 09, která ho podporovala, doporučila Sáblíka), přidal Sáblík o něco víc – každý bod Šarapatkova výsledku znamenal asi +${nf(VV.zisk_vypadli.sarapatka, 1)} bodu pro Sáblíka proti 1. kolu; podobně ale i tam, kde byl silný Brož (ANO, +${nf(VV.zisk_vypadli.broz, 1)}). Spíš to tedy ukazuje, že se voliči vypadlých kandidátů tentokrát přiklonili k vyzyvateli. Sáblík vyhrál víc okrsků, než ukazoval medián předpovědi, protože řada okrsků byla těsně kolem 50 % a celkové podcenění je překlopilo. Intervaly byly v tomto kole zbytečně široké (${pct(MV.pokryti_80, 0)} okrsků v 80% intervalu) – zahrnují i nejistotu celého obvodu, který tentokrát dopadl blízko středu předpovědi.</p>`;
+    const MET = [['Průměrná chyba okrsku', (x) => nf(x.mae, 1) + ' p. b.'], ['Systematický posun', (x) => pp(x.posun)], ['Korelace se skutečností', (x) => nf(x.r, 2)], ['Správný vítěz okrsku', (x) => pct(x.vitez_ok, 0)]];
+    table($('#tb-senvys'), [{ k: 'c', label: '', cls: 'wrap', f: (r) => r.c }, { k: 'vse', label: 'Celkem', n: 1 }, { k: 'p5', label: 'Praha 5', n: 1 }, { k: 'p13', label: 'Praha 13', n: 1 }],
+      MET.flatMap(([c, f]) => [['model', 'předpověď'], ['naivni', 'naivně (1. kolo)']].map(([m, lab], ii) => ({ c: ii ? `<span class="muted">${lab}</span>` : `<b>${c}</b><br>${lab}`, vse: f(H.vse[m]), p5: f(H.praha5[m]), p13: f(H.praha13[m]) }))));
+    scatter($('#ch-senvys'), VV.okrsky.map((r) => ({ x: r.predpoved, y: r.skutecnost, series: r.mc, tip: `<b>Okrsek ${r.okrsek} · ${esc(r.ctvrt || r.mc)}</b><br>předpověď ${pct(r.predpoved, 0)} (${nf(r.p10, 0)}–${nf(r.p90, 0)} %)<br>skutečnost ${pct(r.skutecnost, 1)} (${r.sablik_hlasy} : ${r.laska})` })),
+      { xl: 'předpověď: podíl Sáblíka (%)', yl: 'skutečnost: podíl Sáblíka (%)', series: [{ key: 'Praha 5', color: css('--s1') }, { key: 'Praha 13', color: css('--gray-mark') }], fit: true });
+    // tři mapy Prahy 5: předpověď, skutečnost, rozdíl
+    fetch('../data/okrsky_p5.geojson').then((r) => r.json()).then((geo) => {
+      const RS = ['#0e7a52', '#1baf7a', '#a3dcc5', '#b5d3f5', '#5a9be6', '#1f5fae'], RD = ['#1f5fae', '#5a9be6', '#b5d3f5', '#a3dcc5', '#1baf7a', '#0e7a52'];
+      const bin = (v, br, rp) => { let i = 0; while (i < br.length && v >= br[i]) i++; return rp[i]; };
+      const byO = Object.fromEntries(VV.okrsky.filter((r) => r.mc === 'Praha 5').map((r) => [r.okrsek, r]));
+      const k = Math.cos((50.07 * Math.PI) / 180), F = geo.features, rings = (f) => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates);
+      const xs = F.flatMap((f) => rings(f).flatMap((p) => p[0].map((c) => c[0] * k))), ys = F.flatMap((f) => rings(f).flatMap((p) => p[0].map((c) => c[1])));
+      const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), W = 360, Hh = Math.round((W * (y1 - y0)) / (x1 - x0));
+      const P = (c) => `${(((c[0] * k - x0) / (x1 - x0)) * W).toFixed(1)},${(((y1 - c[1]) / (y1 - y0)) * Hh).toFixed(1)}`;
+      const dd = (f) => rings(f).map((poly) => poly.map((r) => 'M' + r.map(P).join('L') + 'Z').join('')).join('');
+      const box = $('#senvys-mapy'); box.innerHTML = '';
+      [['Předpověď (medián)', (r) => r.predpoved, [40, 45, 50, 55, 60], RS, (r) => r.predpoved > 50],
+        ['Skutečnost 2. kola', (r) => r.skutecnost, [40, 45, 50, 55, 60], RS, (r) => r.skutecnost > 50],
+        ['Předpověď − skutečnost', (r) => r.chyba, [-6, -2, 0, 2, 6], RD, null]].forEach(([title, val, br, rp, vede]) => {
+        const fig = document.createElement('figure'); box.appendChild(fig);
+        const nV = vede ? Object.values(byO).filter(vede).length : null;
+        fig.innerHTML = `<figcaption>${title}<br><span class="muted" style="font-weight:400">${nV != null ? `Sáblík vede v ${nV} z 81 okrsků` : 'modře = Sáblík lépe, než jsme čekali'}</span></figcaption>`;
+        const s = el('svg', { viewBox: `0 0 ${W} ${Hh}`, width: '100%', role: 'img' }); fig.appendChild(s);
+        F.forEach((f) => {
+          const r = byO[f.properties.o]; if (!r) return;
+          const pth = el('path', { d: dd(f), fill: bin(val(r), br, rp), stroke: css('--surface'), 'stroke-width': 0.8 }, s);
+          hover(pth, `<b>Okrsek ${r.okrsek} · ${esc(r.ctvrt)}</b><br>předpověď: Sáblík ${pct(r.predpoved, 0)} (80% interval ${nf(r.p10, 0)}–${nf(r.p90, 0)} %)<br>skutečnost: Sáblík ${pct(r.skutecnost, 1)} (${r.sablik_hlasy} : ${r.laska} hlasů)<br>předpověď − skutečnost: ${pp(r.chyba)}`);
+        });
+      });
+      const lg = (br, rp, fmt) => rp.map((c, i) => `<span><span class="sw" style="background:${c}"></span>${i === 0 ? `pod ${fmt(br[0])}` : i === rp.length - 1 ? `${fmt(br[br.length - 1])} a víc` : `${fmt(br[i - 1])} až ${fmt(br[i])}`}</span>`).join('');
+      $('#lg-senvys').innerHTML = `<div>Podíl Sáblíka (zeleně vede Láska, modře Sáblík): ${lg([40, 45, 50, 55, 60], RS, (v) => v + ' %')}</div><div>Rozdíl (modře = Sáblík dopadl lépe, než jsme čekali): ${lg([-6, -2, 0, 2, 6], RD, (v) => (v > 0 ? '+' : '') + v)}</div>`;
+    });
   }
 
   if (RZ.senat_korelace) {

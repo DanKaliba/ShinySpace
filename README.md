@@ -42,6 +42,7 @@ python scripts/kuriozity.py dl data                       # Kuriozity (povolán�
 python scripts/senat_predikce.py dl data                  # předpověď 2. kola Senátu z druhých kol 2008–2024 (modely A, A1, B)
 python scripts/senat_okrsky.py dl data                    # 2. kolo po okrscích: výběr metody zpětným testem (~5 min)
 python scripts/senat_bayes.py dl data                     # 2. kolo po okrscích: bayesovský model + převážení na A1 (~15 min)
+python scripts/senat_vyhodnoceni.py dl data                # po 2. kole: předpověď × skutečnost po okrscích
 # volitelně: python scripts/senat_konform.py dl <out.json>  (konformní intervaly), python scripts/senat_noc.py dl <dir> --live  (volební noc)
 python scripts/export_csv.py data                         # CSV pro Excel – vždy jako poslední krok
 ```

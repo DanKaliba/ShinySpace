@@ -126,3 +126,10 @@ code { font-size: 13px; }
 details.tbl { margin-top: 8px; font-size: 13px; }
 details.tbl summary { cursor: pointer; color: var(--ink-2); }
 details.tbl table.data { font-size: 13px; }
+
+.maps3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.maps3 figure { margin: 0; }
+.maps3 figcaption { font-size: 13px; font-weight: 600; margin: 0 0 2px; }
+@media (max-width: 760px) { .maps3 { grid-template-columns: 1fr; } }
+.legend-col { flex-direction: column; gap: 4px; }
+.legend-col > div { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }

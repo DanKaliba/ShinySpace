@@ -13,6 +13,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from jsonio import save  # noqa: E402
 from senat_data import load  # noqa: E402
+from ei import fit, bootstrap  # noqa: E402
 
 DL, OUT = sys.argv[1:3]
 OBVOD, LEAD, RUN = 21, 'Láska', 'Sáblík'
@@ -58,6 +59,23 @@ def hodnot(X, col, p=None, lo=None, hi=None):
 celk = {}
 for nazev, X in (('vse', R), ('praha5', R[R.mc == 'Praha 5']), ('praha13', R[R.mc == 'Praha 13'])):
     celk[nazev] = dict(model=hodnot(X, 'predpoved', 'p', 'p10', 'p90'), naivni=hodnot(X, 'k1'))
+# skutečné přesuny voličů mezi koly (Goodmanova regrese s omezeními po okrscích obvodu, bootstrap 200×)
+m = t1.reset_index().merge(t2.reset_index(), on=['OBEC', 'OKRSEK'], suffixes=('_1', '_2'))
+m = m[(m.VOL_SEZNAM_1 >= 50) & (m.VOL_SEZNAM_2 >= 50)]
+r1, r2 = m.VOL_SEZNAM_1.astype(float).values, m.VOL_SEZNAM_2.astype(float).values
+sar, bro = 2, 1  # Šarapatka, Brož (číslo kandidáta)
+G = {LEAD: m[f'HLASY_{ca:02d}_1'], RUN: m[f'HLASY_{cb:02d}_1'], 'Šarapatka': m[f'HLASY_{sar:02d}_1'], 'Brož (ANO)': m[f'HLASY_{bro:02d}_1']}
+G['Ostatní (SPD, KSČM, Přísaha)'] = m.PL_HL_CELK_1 - sum(G.values())
+G['Nevoliči'] = m.VOL_SEZNAM_1 - m.PL_HL_CELK_1
+Xk = np.column_stack([v.astype(float).values for v in G.values()]) / r1[:, None]
+a2, b2 = m[f'HLASY_{ca:02d}_2'].astype(float).values, m[f'HLASY_{cb:02d}_2'].astype(float).values
+Yk = np.c_[a2, b2, r2 - a2 - b2] / r2[:, None]
+Bk = fit(Xk, Yk, r1)
+bo = bootstrap(Xk, Yk, r1, np.random.default_rng(2026), n=200)
+K2 = [LEAD, RUN, 'Nevoliči']
+presuny = dict(kategorie_k1=list(G), kategorie_k2=K2, velikost={k: int(v.sum()) for k, v in G.items()}, okrsku=int(len(m)),
+               matice=[[round(float(x), 4) for x in r] for r in Bk],
+               p05=[[round(float(x), 4) for x in r] for r in np.percentile(bo, 5, axis=0)], p95=[[round(float(x), 4) for x in r] for r in np.percentile(bo, 95, axis=0)])
 A, B = int(R.laska.sum()), int(R.sablik_hlasy.sum())
 k1_obvod = SP['k1']['sablik'] / (SP['k1']['laska'] + SP['k1']['sablik']) * 100
 X_ = np.c_[np.ones(len(R)), R.sarapatka_k1, R.broz_k1]
@@ -72,6 +90,7 @@ data['senat_vysledek'] = dict(
     posun_ctvrti=R[R.mc == 'Praha 5'].groupby('ctvrt').apply(lambda x: round(float(np.average(x.chyba, weights=x.hlasu)), 2)).sort_values().to_dict(),
     zisk_vypadli=dict(sarapatka=round(float(b_[1]), 2), broz=round(float(b_[2]), 2), r_chyba_sarapatka=round(float(R.chyba.corr(R.sarapatka_k1)), 2)),
     ucast_posun=round(float((R.ucast_pred - R.ucast).mean()), 2),
+    presuny=presuny,
     okrsky=R.round(2).to_dict('records'))
 by = R.set_index('okrsek')
 for o in data['okrsky']:
@@ -82,3 +101,5 @@ save(data, os.path.join(OUT, 'data.json'))
 V = data['senat_vysledek']
 print({k: v for k, v in V.items() if k not in ('okrsky', 'okrsky_hodnoceni')})
 print(json.dumps(V['okrsky_hodnoceni'], ensure_ascii=False))
+for k, r in zip(presuny['kategorie_k1'], presuny['matice']):
+    print(f'  {k:30s}', [round(x * 100, 1) for x in r], presuny['velikost'][k])

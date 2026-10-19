@@ -6,7 +6,7 @@
 <title>Piráti Praha 5 – volby 2026</title>
 <meta name="description" content="Analýza výsledků Pirátů v komunálních volbách 2026 v Praze a na Praze 5 po volebních okrscích, srovnání s rokem 2022 a sněmovními volbami 2025, senát a kampaňové akce.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=20261018c">
+<link rel="stylesheet" href="style.css?v=20261019a">
 </head>
 <body>
 <header class="top" id="top">
@@ -251,11 +251,15 @@
     <figure class="card"><figcaption>Praha 5: předpověď, skutečný výsledek a rozdíl po okrscích (podíl Sáblíka mezi finalisty)</figcaption>
       <div class="maps3" id="senvys-mapy"></div><div class="legend legend-col" id="lg-senvys"></div>
       <p class="small">Okrsky Prahy 13 (40 % obvodu) v mapě nejsou – máme jen hranice okrsků Prahy 5; jsou v grafu a v tabulce níže. Mapy výsledku a rozdílu jsou i jako vrstvy v mapě okrsků nahoře.</p></figure>
+    <figure class="card"><figcaption>Kdo se mezi koly posunul kam (odhad z 139 okrsků obvodu 21)</figcaption><div id="ch-senvys-sankey"></div>
+        <p class="small">Tloušťka pruhu = odhadovaný počet voličů. Skrytý je jen tok „nevolil v 1. ani ve 2. kole“. Odhad ekologickou inferencí z rozdílů mezi okrsky (Goodmanova regrese s omezeními), ne data o jednotlivcích – malé toky berte jako „malé“, ne jako přesnou nulu.</p></figure>
     <div class="grid2">
+      <figure class="card"><figcaption>Přesuny voličů: 2026 × typické druhé kolo</figcaption><div class="tablewrap"><table class="data" id="tb-senvys-presuny"></table></div>
+        <p class="small">90% interval z bootstrapu okrsků. „Typicky“ = medián odhadů z 231 druhých kol 2008–2024 (model přesunů, na kterém stála předpověď).</p></figure>
       <figure class="card"><figcaption>Hodnocení předpovědi okrsků</figcaption><div class="tablewrap"><table class="data" id="tb-senvys"></table></div>
         <p class="small">Naivní odhad = podíl Sáblíka mezi finalisty v 1. kole. Posun: záporné číslo = Sáblík dopadl lépe, než odhad čekal.</p></figure>
-      <figure class="card"><figcaption>Předpověď × skutečnost po okrscích (podíl Sáblíka)</figcaption><div id="ch-senvys"></div><div class="legend"><span><span class="sw" style="background:var(--s1)"></span>Praha 5</span><span><span class="sw" style="background:var(--gray-mark)"></span>Praha 13</span></div></figure>
     </div>
+    <figure class="card" style="max-width:640px"><figcaption>Předpověď × skutečnost po okrscích (podíl Sáblíka)</figcaption><div id="ch-senvys"></div><div class="legend"><span><span class="sw" style="background:var(--s1)"></span>Praha 5</span><span><span class="sw" style="background:var(--gray-mark)"></span>Praha 13</span></div></figure>
 
     <h3 id="sen-pred">Předpověď 2. kola: Láska × Sáblík (zveřejněná před volbami)</h3>
     <div id="senpred-tiles" class="tiles"></div>
@@ -426,6 +430,6 @@
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="app.js?v=20261018c"></script>
+<script src="app.js?v=20261019a"></script>
 </body>
 </html>

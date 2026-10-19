@@ -197,7 +197,7 @@ function weekBars(container, weeks) {
 }
 
 /* Sankey: cats (stejné kategorie vlevo i vpravo), size = velikost kategorií 2022 (osoby), M = matice přesunů (řádky 2022) */
-const CAT_COLOR = [[/^Piráti/, '--ink'], [/SOBĚ/, '--s4'], [/^ODS|^SPOLU/, '--s1'], [/^STAN/, '--s5'], [/^SEN/, '--s3'], [/^ANO/, '--s7'], [/^SPD|^Ostatní|^Motoristé/, '--s2'], [/^Nevoliči/, '--gray-mark']];
+const CAT_COLOR = [[/^Láska/, '--s3'], [/^Sáblík/, '--s1'], [/^Šarapatka/, '--s5'], [/^Brož/, '--s7'], [/^Piráti/, '--ink'], [/SOBĚ/, '--s4'], [/^ODS|^SPOLU/, '--s1'], [/^STAN/, '--s5'], [/^SEN/, '--s3'], [/^ANO/, '--s7'], [/^SPD|^Ostatní|^Motoristé/, '--s2'], [/^Nevoliči/, '--gray-mark']];
 const catColor = (c) => css((CAT_COLOR.find(([rx]) => rx.test(c)) || [0, '--muted'])[1]);
 function sankey(container, { cats, catsR, size, M, nonvoters = false }) {
   catsR = catsR || cats;
@@ -291,7 +291,7 @@ document.querySelectorAll('[data-md]').forEach((elm) => {
 });
 
 /* ---------- hlavní ---------- */
-fetch('../data/data.json?v=20261018c').then((r) => r.json()).then(init).catch((e) => {
+fetch('../data/data.json?v=20261019a').then((r) => r.json()).then(init).catch((e) => {
   document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="card">Data se nepodařilo načíst (${esc(e.message)}). Stránku je potřeba otevřít přes web server, ne jako soubor.</p>`);
 });
 
@@ -786,7 +786,7 @@ function init(D) {
 
   /* Jak dopadla předpověď 2. kola */
   if (D.senat_vysledek) {
-    const VV = D.senat_vysledek, PR = VV.predpoved, H = VV.okrsky_hodnoceni, M5 = H.praha5.model, MV = H.vse.model, NV = H.vse.naivni;
+    const SP = D.senat_predikce, VV = D.senat_vysledek, PR = VV.predpoved, H = VV.okrsky_hodnoceni, M5 = H.praha5.model, MV = H.vse.model, NV = H.vse.naivni;
     const t7 = (k, v, d) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
     $('#senvys-tiles').innerHTML =
       t7('Výsledek 2. kola', `Láska ${pct(100 - VV.sablik_pct, 1)}`, `Sáblík ${pct(VV.sablik_pct, 1)} · ${int(VV.laska)} : ${int(VV.sablik)} hlasů · účast ${pct(VV.ucast, 1)}`) +
@@ -802,6 +802,22 @@ function init(D) {
       MET.flatMap(([c, f]) => [['model', 'předpověď'], ['naivni', 'naivně (1. kolo)']].map(([m, lab], ii) => ({ c: ii ? `<span class="muted">${lab}</span>` : `<b>${c}</b><br>${lab}`, vse: f(H.vse[m]), p5: f(H.praha5[m]), p13: f(H.praha13[m]) }))));
     scatter($('#ch-senvys'), VV.okrsky.map((r) => ({ x: r.predpoved, y: r.skutecnost, series: r.mc, tip: `<b>Okrsek ${r.okrsek} · ${esc(r.ctvrt || r.mc)}</b><br>předpověď ${pct(r.predpoved, 0)} (${nf(r.p10, 0)}–${nf(r.p90, 0)} %)<br>skutečnost ${pct(r.skutecnost, 1)} (${r.sablik_hlasy} : ${r.laska})` })),
       { xl: 'předpověď: podíl Sáblíka (%)', yl: 'skutečnost: podíl Sáblíka (%)', series: [{ key: 'Praha 5', color: css('--s1') }, { key: 'Praha 13', color: css('--gray-mark') }], fit: true });
+    // přesuny voličů mezi koly
+    const PS = VV.presuny;
+    if (PS) {
+      sankey($('#ch-senvys-sankey'), { cats: PS.kategorie_k1, catsR: PS.kategorie_k2, size: PS.velikost, M: PS.matice, nonvoters: false });
+      const ci = (i, j) => `<b>${pct(PS.matice[i][j] * 100, 0)}</b> <span class="muted">(${nf(PS.p05[i][j] * 100, 0)}–${nf(PS.p95[i][j] * 100, 0)})</span>`;
+      const VZ2 = SP.model_b.vzorce, ix = (c) => PS.kategorie_k1.indexOf(c);
+      const elim = ['Šarapatka', 'Brož (ANO)', 'Ostatní (SPD, KSČM, Přísaha)'].map(ix), wsum = elim.reduce((a, i) => a + PS.velikost[PS.kategorie_k1[i]], 0);
+      const agg = (j) => elim.reduce((a, i) => a + PS.matice[i][j] * PS.velikost[PS.kategorie_k1[i]], 0) / wsum * 100;
+      table($('#tb-senvys-presuny'), [{ k: 'z', label: 'Voliči z 1. kola', cls: 'wrap', f: (r) => r.z }, { k: 'l', label: '→ Láska', n: 1, f: (r) => r.l }, { k: 's', label: '→ Sáblík', n: 1, f: (r) => r.s }, { k: 'n', label: '→ nepřišli', n: 1, f: (r) => r.n }], [
+        ...['Láska', 'Sáblík', 'Šarapatka', 'Brož (ANO)', 'Ostatní (SPD, KSČM, Přísaha)'].map((c) => ({ z: `${esc(c)} <span class="muted">(${int(PS.velikost[c])})</span>`, l: ci(ix(c), 0), s: ci(ix(c), 1), n: ci(ix(c), 2) })),
+        { z: '<b>vypadlí kandidáti celkem</b>', l: `<b>${pct(agg(0), 0)}</b>`, s: `<b>${pct(agg(1), 0)}</b>`, n: `<b>${pct(agg(2), 0)}</b>` },
+        { z: '<span class="muted">typicky: voliči vítěze 1. kola</span>', l: pct(VZ2.vitez_znovu, 0), s: '–', n: '–' },
+        { z: '<span class="muted">typicky: voliči druhého z 1. kola</span>', l: '–', s: pct(VZ2.druhy_znovu, 0), n: '–' },
+        { z: '<span class="muted">typicky: voliči vypadlých</span>', l: pct(VZ2.ostatni_k_vitezi, 0), s: pct(VZ2.ostatni_k_druhemu, 0), n: pct(VZ2.ostatni_neprisli, 0) }]);
+      $('#senvys-text').insertAdjacentHTML('beforeend', `<p><b>Proč předpověď Sáblíka podcenila – přesuny voličů:</b> Láska si udržel ${pct(PS.matice[0][0] * 100, 0)} svých voličů z 1. kola (typicky vítěz 1. kola ${pct(VZ2.vitez_znovu, 0)}), ale od voličů vypadlých kandidátů nezískal skoro nic (${pct(agg(0), 0)}, typicky ${pct(VZ2.ostatni_k_vitezi, 0)}). Kdo nevolil Lásku v 1. kole, ten ho nevolil ani ve 2.: buď nepřišel, nebo šel k Sáblíkovi – od Šarapatkových voličů asi ${pct(PS.matice[ix('Šarapatka')][1] * 100, 0)}, od Brožových (ANO) asi ${pct(PS.matice[ix('Brož (ANO)')][1] * 100, 0)}. Sáblík přitom přivedl znovu jen ${pct(PS.matice[1][1] * 100, 0)} svých voličů z 1. kola (typicky ${pct(VZ2.druhy_znovu, 0)}). Model z minulých kol počítal s tím, že vítěz 1. kola od voličů vypadlých kandidátů získá víc než druhý – tady to bylo naopak. Šlo to tušit z dat 1. kola: Šarapatka byl silný tam, kde je slabý SEN, a jeho voliči v komunálních volbách volili strany, které s Láskovým SEN na Praze 5 soupeří.</p>`);
+    }
     // tři mapy Prahy 5: předpověď, skutečnost, rozdíl
     fetch('../data/okrsky_p5.geojson').then((r) => r.json()).then((geo) => {
       const RS = ['#0e7a52', '#1baf7a', '#a3dcc5', '#b5d3f5', '#5a9be6', '#1f5fae'], RD = ['#1f5fae', '#5a9be6', '#b5d3f5', '#a3dcc5', '#1baf7a', '#0e7a52'];

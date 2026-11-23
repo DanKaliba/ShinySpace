@@ -3,7 +3,7 @@
 Analýza výsledků Pirátů v komunálních volbách 2026 v Praze a na Praze 5 po volebních okrscích:
 srovnání s KV 2022 a PS 2025, SEN a STAN, Senát (obvod 21), kampaňové akce a zápisy do škol.
 
-**Web:** https://dankaliba.github.io/ShinySpace/
+**Web:** původní analytický web už neběží. Jeho poslední podobu najdeš ve značce `zaloha-web-2026-11-23` (`git checkout zaloha-web-2026-11-23 -- web`); data a zjištění zůstávají v `data/` a `zjisteni/`.
 
 ## Struktura
 
@@ -13,7 +13,7 @@ srovnání s KV 2022 a PS 2025, SEN a STAN, Senát (obvod 21), kampaňové akce 
 | [`data/`](data/) | vygenerovaná data: `data.json` (web), CSV pro Excel, hranice okrsků | skripty |
 | [`scripts/`](scripts/) | stažení zdrojů a výpočet (`download.sh`, `okr.py`, `build.py`, `schools.py`, `psefologie.py`, `rozsireni.py`, `census.py`, `doplneni.py`, `ei_shrink.py`, `forenzni.py`, `hledani.py`, `export_csv.py`, `mandaty.py`, `kvdata.py`, `jsonio.py`, `ei.py`) | při změně analýzy |
 | [`.claude/skills/`](.claude/skills/) | skill `psefologie-okrsky` pro Claude Code: zdroje, nástrahy a metody této analýzy | když se metoda změní |
-| [`web/`](web/) | stránka (HTML, JS, CSS) – čte `../data/` a `../zjisteni/` | při změně vzhledu |
+| [`web/`](web/) | od 23. 11. 2026 mockup svatebního webu (Kristýna a Zdeněk), původní analytický web už se nepoužívá | – |
 
 Chceš doplnit zjištění? Uprav `zjisteni/hlavni-zjisteni.md` a commitni. Nová data? Spusť skripty a commitni `data/`.
 
@@ -21,7 +21,7 @@ Chceš doplnit zjištění? Uprav `zjisteni/hlavni-zjisteni.md` a commitni. Nov�
 
 ```bash
 python -m http.server 8000      # v kořeni repozitáře
-# http://localhost:8000/web/
+# http://localhost:8000/web/   (mockup; starý web viz značka zaloha-web-2026-11-23)
 ```
 
 ## Přegenerování dat

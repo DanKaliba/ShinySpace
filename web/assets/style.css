@@ -1,0 +1,342 @@
+/* ==========================================================================
+   Kristýna a Zdeněk — svatební web
+   Barvy jsou z pozvánky (tmavě zelená jména, šedozelená číslice, zlaté čáry,
+   krémový papír). Písma: Mea Culpa (jména), Inter (zbytek), obojí lokálně.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Mea Culpa';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/mea-culpa-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Mea Culpa';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/mea-culpa-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('fonts/inter-var.woff2') format('woff2');
+}
+
+:root {
+  --papir: #faf6f0;
+  --papir-tmavsi: #f3ece2;
+  --les: #1d3a2a;          /* jména */
+  --list: #55705a;         /* číslice, popisky */
+  --list-svetly: #7d9482;
+  --zlato: #c1923d;        /* svislé čáry kolem data */
+  --text: #2a3a30;
+  --text-tlumeny: #5d6b61;
+  --cara: #d9d0c1;
+  --chyba: #a3341f;
+
+  --pismo-jmena: 'Mea Culpa', 'Snell Roundhand', 'Brush Script MT', cursive;
+  --pismo-text: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--papir);
+  color: var(--text);
+  font-family: var(--pismo-text);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--les); text-underline-offset: 0.2em; text-decoration-color: var(--zlato); }
+a:hover { color: var(--list); }
+:focus-visible { outline: 2px solid var(--zlato); outline-offset: 3px; }
+
+.preskocit {
+  position: absolute; left: 1rem; top: -4rem; z-index: 10;
+  background: var(--les); color: var(--papir); padding: .6rem 1rem; border-radius: .4rem;
+}
+.preskocit:focus { top: 1rem; }
+
+/* ---------- Hero = pozvánka ---------- */
+
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: clamp(3rem, 8vh, 6rem) 1.25rem clamp(3.5rem, 9vh, 6rem);
+  text-align: center;
+}
+
+/* Květiny v rozích. Každá se otáčí kolem svého rohu (transform-origin),
+   rotaci počítá assets/kvety.js přes proměnnou --uhel. */
+.kvet {
+  position: absolute;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  transform: rotate(var(--uhel, 0deg));
+  will-change: transform;
+}
+.kvet-tl { top: 0;    left: 0;  width: clamp(120px, 23vw, 330px); transform-origin: 0 0; }
+.kvet-tr { top: 0;    right: 0; width: clamp(150px, 31vw, 460px); transform-origin: 100% 0; }
+.kvet-bl { bottom: 0; left: 0;  width: clamp(150px, 31vw, 450px); transform-origin: 0 100%; }
+.kvet-br { bottom: 0; right: 0; width: clamp(120px, 24vw, 340px); transform-origin: 100% 100%; }
+
+.hero-text { position: relative; z-index: 1; max-width: 42rem; }
+
+h1 { margin: 0; font-weight: 400; }
+
+.jmeno {
+  display: block;
+  font-family: var(--pismo-jmena);
+  font-weight: 400;
+  font-size: clamp(3.4rem, min(11.5vw, 11.5vh), 7.2rem);
+  line-height: 1.12;
+  color: var(--les);
+}
+
+/* Srdce uprostřed: Zdeněk je kardiolog, tak tluče. Dvojitý úder jako
+   skutečný tep (lub-dub), asi 70 za minutu. */
+.srdce {
+  display: block;
+  width: clamp(2.2rem, 5.5vw, 3.2rem);
+  height: auto;
+  margin: .35rem auto .5rem;
+  fill: transparent;
+  stroke: var(--list);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  overflow: visible;
+  transform-origin: 50% 55%;
+  animation: tep 0.86s ease-in-out infinite;
+}
+@keyframes tep {
+  0%   { transform: scale(1);    fill: transparent; }
+  10%  { transform: scale(1.16); fill: rgba(85, 112, 90, .22); }
+  22%  { transform: scale(1.02); fill: rgba(85, 112, 90, .06); }
+  34%  { transform: scale(1.10); fill: rgba(85, 112, 90, .16); }
+  50%  { transform: scale(1);    fill: transparent; }
+  100% { transform: scale(1);    fill: transparent; }
+}
+
+/* Datum: SRPEN / SOBOTA |14| VE 13:00 / 2027 */
+.datum { margin: clamp(1.2rem, 4vh, 2.6rem) 0 0; display: grid; justify-items: center; color: var(--les); }
+.datum-mesic, .datum-rok {
+  font-size: clamp(1.15rem, 3.2vw, 1.6rem);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+.datum-radek {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: clamp(.9rem, 3vw, 1.8rem);
+  width: min(100%, 36rem);
+}
+.datum-den-tydne, .datum-cas {
+  font-size: clamp(1rem, 3.2vw, 1.55rem);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.datum-den-tydne { text-align: right; }
+.datum-cas { text-align: left; }
+.datum-cislo {
+  font-size: clamp(3.8rem, min(13vw, 12vh), 7.4rem);
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--list);
+  padding: 0 clamp(.9rem, 3vw, 1.6rem);
+  border-left: 2px solid var(--zlato);
+  border-right: 2px solid var(--zlato);
+}
+
+.oznameni {
+  margin: clamp(1.4rem, 5vh, 3rem) 0 0;
+  font-size: clamp(.92rem, 2.4vw, 1.05rem);
+  line-height: 1.75;
+  color: var(--list);
+  letter-spacing: .02em;
+}
+.misto {
+  margin: clamp(1.1rem, 4vh, 2.4rem) 0 0;
+  font-size: clamp(1rem, 2.6vw, 1.2rem);
+  line-height: 1.6;
+  color: var(--list);
+  letter-spacing: .03em;
+}
+.odpocet {
+  margin: 1.8rem 0 0;
+  font-size: 1rem;
+  letter-spacing: .06em;
+  color: var(--text-tlumeny);
+}
+.odpocet strong { color: var(--les); font-weight: 600; }
+
+.dolu {
+  position: absolute; left: 50%; bottom: .9rem; z-index: 1;
+  width: 2.6rem; height: 2.6rem; margin-left: -1.3rem;
+  display: grid; place-items: center;
+  color: var(--list);
+}
+.dolu svg { width: 1.6rem; height: 1.6rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Na nízkém okně (telefon na šířku) pozvánku zhustit. */
+@media (max-width: 420px) {
+  .datum-den-tydne, .datum-cas { font-size: .85rem; letter-spacing: .06em; }
+  .datum-radek { gap: .6rem; }
+}
+
+@media (max-height: 560px) {
+  .hero { padding-top: 2.5rem; padding-bottom: 3.5rem; }
+  .jmeno { font-size: clamp(2.6rem, 8vw, 4.4rem); }
+  .datum { margin-top: 1rem; }
+  .oznameni { margin-top: 1rem; }
+  .misto { margin-top: .8rem; }
+  .dolu { display: none; }
+}
+
+/* ---------- Sekce pod pozvánkou ---------- */
+
+.sekce {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: clamp(3.5rem, 9vh, 6rem) 1.5rem;
+  text-align: center;
+  border-top: 1px solid var(--cara);
+}
+.sekce:first-child { border-top: 0; }
+.sekce h2 {
+  margin: 0;
+  font-family: var(--pismo-jmena);
+  font-weight: 400;
+  font-size: clamp(2.8rem, 8vw, 4.2rem);
+  line-height: 1.15;
+  color: var(--les);
+}
+.sekce-podtitul {
+  margin: .4rem 0 1.8rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: .95rem;
+  color: var(--list);
+}
+
+.karta {
+  display: inline-block;
+  min-width: min(100%, 22rem);
+  padding: 1.6rem 2rem;
+  background: var(--papir-tmavsi);
+  border-radius: .6rem;
+  border: 1px solid var(--cara);
+}
+.misto-nazev { margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--les); }
+.adresa { margin: .3rem 0 1rem; font-style: normal; color: var(--text-tlumeny); }
+.odkazy { margin: 0; }
+
+/* ---------- Potvrzení ---------- */
+
+.potvrzeni { margin-top: 1.4rem; text-align: left; }
+.potvrzeni > p { text-align: center; }
+.termin {
+  margin: 0 0 .6rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: .9rem;
+  color: var(--list);
+}
+.formular { margin-top: 1.8rem; display: grid; gap: 1.2rem; }
+.pole { display: grid; gap: .35rem; border: 0; padding: 0; margin: 0; min-width: 0; font-weight: 500; }
+.napoveda { font-weight: 400; color: var(--text-tlumeny); font-size: .9rem; }
+
+input[type="text"], input[type="number"], textarea {
+  width: 100%;
+  padding: .7rem .85rem;
+  font: inherit;
+  color: var(--text);
+  background: #fffdf9;
+  border: 1px solid var(--cara);
+  border-radius: .4rem;
+}
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
+  outline: 2px solid var(--zlato); outline-offset: 1px; border-color: var(--zlato);
+}
+.volby { display: grid; gap: .5rem; }
+.volba {
+  display: flex; align-items: center; gap: .65rem;
+  padding: .65rem .85rem;
+  background: #fffdf9;
+  border: 1px solid var(--cara);
+  border-radius: .4rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+.volba:has(input:checked) { border-color: var(--list); background: #f4f7f2; }
+.volba input { accent-color: var(--les); width: 1.1rem; height: 1.1rem; margin: 0; }
+
+button[type="submit"] {
+  justify-self: center;
+  margin-top: .4rem;
+  padding: .85rem 2.6rem;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--papir);
+  background: var(--les);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .2s;
+}
+button[type="submit"]:hover { background: var(--list); }
+button[type="submit"]:disabled { opacity: .6; cursor: default; }
+
+.chyba { margin: 0; text-align: center; color: var(--chyba); font-weight: 500; }
+.dekujeme { text-align: center; padding: 1.6rem 1rem; }
+.dekujeme h3 { margin: 0 0 .4rem; font-family: var(--pismo-jmena); font-weight: 400; font-size: 2.6rem; color: var(--les); }
+.jinak { margin: 2rem 0 0; color: var(--text-tlumeny); font-size: .92rem; }
+
+/* ---------- Patička ---------- */
+
+.paticka {
+  padding: 3rem 1.5rem 3.5rem;
+  text-align: center;
+  background: var(--papir-tmavsi);
+  color: var(--text-tlumeny);
+  font-size: .95rem;
+}
+.paticka p { margin: 0; }
+.paticka .jmena {
+  font-family: var(--pismo-jmena);
+  font-size: 2.6rem;
+  line-height: 1.2;
+  color: var(--les);
+}
+
+/* ---------- Pohyb ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .srdce { animation: none; }
+}

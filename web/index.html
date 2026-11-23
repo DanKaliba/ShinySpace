@@ -1,435 +1,166 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="cs">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Piráti Praha 5 – volby 2026</title>
-<meta name="description" content="Analýza výsledků Pirátů v komunálních volbách 2026 v Praze a na Praze 5 po volebních okrscích, srovnání s rokem 2022 a sněmovními volbami 2025, senát a kampaňové akce.">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=20261019a">
+
+<title>Kristýna a&nbsp;Zdeněk — svatba 14.&nbsp;8.&nbsp;2027</title>
+<meta name="description" content="Kristýna a Zdeněk se berou v sobotu 14. srpna 2027 ve 13:00 v Okříškách. Kde, kdy a jak nám dát vědět, že přijedete.">
+<meta name="robots" content="noindex">
+<meta property="og:title" content="Kristýna a Zdeněk — svatba 14. 8. 2027">
+<meta property="og:description" content="Sobota 14. srpna 2027 ve 13:00, Okříšky.">
+<meta property="og:type" content="website">
+
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 27 5 15.5C2 12 4 6.5 9 6.5c3 0 5 2 7 4.5 2-2.500 4-4.500 7-4.500 5 0 7 5.500 4 9z' fill='none' stroke='%231d3a2a' stroke-width='2.200' stroke-linejoin='round'/></svg>">
 </head>
 <body>
-<header class="top" id="top">
-  <div class="wrap">
-    <p class="eyebrow">Komunální volby 9.–10. 10. 2026 · Praha a Praha 5</p>
-    <h1>Jak dopadli Piráti na Praze 5</h1>
-    <p class="lede">Výsledky po všech 81 volebních okrscích Prahy 5: srovnání s komunálními volbami 2022 a sněmovními 2025, konkurence SENu a Starostů, senátní obvod 21 a&nbsp;co ukazují kampaňové akce.</p>
-    <nav class="toc" aria-label="Obsah">
-      <a href="#zjisteni">Zjištění</a><a href="#praha">Praha</a><a href="#p5">Praha 5</a><a href="#okrsky">Okrsky</a><a href="#ctvrti">Čtvrti</a><a href="#skoly">Školy</a><a href="#demografie">Demografie</a><a href="#seniori">Senioři</a><a href="#akce">Akce</a><a href="#konkurence">SEN a STAN</a><a href="#psefologie">Psefologie</a><a href="#senat">Senát</a><a href="#kandidati">Kandidáti</a><a href="#kontrola">Kontrola dat</a><a href="#hledani">4. mandát</a><a href="#doplneni">Doplňky</a><a href="#kuriozity">Kuriozity</a><a href="#dalsi">Co chybí</a><a href="#metodika">Metodika</a>
-    </nav>
+
+<a class="preskocit" href="#obsah">Přeskočit na obsah</a>
+
+<!-- ====================== HERO = pozvánka ======================
+     Květiny v rozích se hýbou od myši / dotyku (assets/kvety.js). -->
+<header class="hero" id="uvod">
+  <img class="kvet kvet-tl" src="assets/img/kvet-tl.png" alt="" width="288" height="465" data-roh="tl">
+  <img class="kvet kvet-tr" src="assets/img/kvet-tr.png" alt="" width="540" height="566" data-roh="tr">
+  <img class="kvet kvet-bl" src="assets/img/kvet-bl.png" alt="" width="537" height="568" data-roh="bl">
+  <img class="kvet kvet-br" src="assets/img/kvet-br.png" alt="" width="358" height="490" data-roh="br">
+
+  <div class="hero-text">
+    <h1>
+      <span class="jmeno jmeno-1">Kristýna</span>
+      <svg class="srdce" viewBox="0 0 64 58" role="img" aria-label="srdce">
+        <path d="M32 54 6 28C-3 18 2 3 16 3c7 0 12 4 16 10C36 7 41 3 48 3c14 0 19 15 10 25z"/>
+      </svg>
+      <span class="jmeno jmeno-2">Zdeněk</span>
+    </h1>
+
+    <p class="datum" aria-label="Sobota 14. srpna 2027 ve 13:00">
+      <span class="datum-mesic">Srpen</span>
+      <span class="datum-radek">
+        <span class="datum-den-tydne">Sobota</span>
+        <span class="datum-cislo">14</span>
+        <span class="datum-cas">ve&nbsp;13:00</span>
+      </span>
+      <span class="datum-rok">2027</span>
+    </p>
+
+    <p class="oznameni">Oznamujeme rodině a&nbsp;přátelům,<br>
+      že slavnostně a&nbsp;před oltářem<br>
+      vstoupíme do&nbsp;manželství</p>
+
+    <p class="misto">Okříšky<br>Jihlavská&nbsp;1</p>
   </div>
+
+  <a class="dolu" href="#kde" aria-label="Dolů ke kde a kdy">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg>
+  </a>
 </header>
 
-<main class="wrap">
-  <section id="tiles" class="tiles" aria-label="Hlavní čísla"></section>
+<main id="obsah">
 
-  <section id="zjisteni">
-    <h2>Hlavní zjištění</h2>
-    <div class="findings" id="findings" data-md="hlavni-zjisteni.md"></div>
-    <p class="small">Text je v souboru <code>zjisteni/hlavni-zjisteni.md</code> v repozitáři.</p>
-  </section>
+  <!-- ====================== KDE A KDY ====================== -->
+  <section class="sekce" id="kde">
+    <h2>Kde a&nbsp;kdy</h2>
+    <p class="sekce-podtitul">Sobota 14.&nbsp;srpna 2027 ve&nbsp;13:00</p>
+    <p class="odpocet" data-datum="2027-08-14T13:00" hidden>
+      <span data-text>—</span>
+    </p>
 
-  <section id="praha">
-    <h2>Praha: magistrát a městské části</h2>
-    <p class="note" id="praha-note"></p>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Zastupitelstvo hl. m. Prahy – podíl hlasů 2022 → 2026</figcaption>
-        <div id="ch-mag"></div>
-      </figure>
-      <figure class="card">
-        <figcaption>Piráti na magistrát po okrscích celé Prahy, 2026</figcaption>
-        <div id="map-praha" class="map map-sm" role="img" aria-label="Mapa podílu Pirátů v okrscích Prahy"></div>
-        <div class="legend" id="lg-praha"></div>
-      </figure>
+    <div class="karta">
+      <!-- DOPLNIT: co přesně je Jihlavská 1 (kostel / zámek / restaurace?) -->
+      <p class="misto-nazev">[NÁZEV MÍSTA]</p>
+      <address class="adresa">Jihlavská&nbsp;1<br>Okříšky</address>
+      <p class="odkazy">
+        <!-- DOPLNIT: odkaz na mapu (mapy.com / Google Maps) -->
+        <a href="[ODKAZ NA MAPU]" target="_blank" rel="noopener">Otevřít v&nbsp;mapách</a>
+      </p>
     </div>
-    <figure class="card">
-      <figcaption>Městské části – Piráti na magistrát (v území MČ), sněmovna 2025 a pirátská listina do zastupitelstva MČ</figcaption>
-      <div class="tablewrap"><table class="data sortable" id="tb-mc"></table></div>
-      <p class="small">MČ listina = kandidátka, na které jsou Piráti (samostatně nebo v koalici; název v tabulce). Prázdné = Piráti v MČ nekandidovali.</p>
-    </figure>
+
+    <!-- DOPLNIT: další texty (parkování, dress code, ubytování, harmonogram)
+         podle toho, co si novomanželé přejí. -->
   </section>
 
-  <section id="p5">
-    <h2>Praha 5: zastupitelstvo městské části</h2>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Výsledky stran 2022 → 2026 (podíl hlasů, mandáty z 41)</figcaption>
-        <div id="ch-p5"></div>
-        <p class="small">ODS kandidovala 2022 v koalici SPOLEČNĚ PRO PRAHU 5 (ODS, TOP 09); TOP 09 v roce 2026 s lidovci. Řádek „TOP 09 a KDU“ má pro rok 2022 hodnotu koalice KDU-ČSL, Zelení a Nezávislí.</p>
-      </figure>
-      <figure class="card">
-        <figcaption>Piráti na Praze 5 ve třech volbách</figcaption>
-        <div id="ch-p5-trend"></div>
-        <p class="small">Sněmovní volby mají jiný systém (1 hlas, ne 41 nebo 65) a mnohem vyšší účast, proto jsou jen orientační mezistupeň.</p>
-      </figure>
-    </div>
-  </section>
+  <!-- ====================== POTVRZENÍ ÚČASTI ======================
+       Formulář odesílá do Google Formuláře (assets/rsvp.js). Až ho založí,
+       přepiš v action= ID formuláře a čísla name="entry.XXX" — postup je
+       v README. Dokud je v action __ID_FORMULARE__, formulář na veřejném
+       webu zmizí; na localhostu se ukáže, ale neodesílá. -->
+  <section class="sekce" id="potvrzeni">
+    <h2>Dejte nám vědět</h2>
 
-  <section id="okrsky">
-    <h2>Volební okrsky Prahy 5</h2>
-    <p class="note">Klikni na okrsek pro detail. Vrstva „Akce“ ukazuje místa kampaňových akcí z kalendáře (velikost = počet akcí na místě).</p>
-    <div class="controls" role="radiogroup" aria-label="Vrstva mapy" id="layer-btns"></div>
-    <div class="mapgrid">
-      <div>
-        <div id="map-p5" class="map" role="img" aria-label="Mapa okrsků Prahy 5"></div>
-        <div class="legend" id="lg-p5"></div>
+    <div class="potvrzeni">
+      <p class="termin">Prosíme do&nbsp;[DO KDY ODPOVĚDĚT]</p>
+      <p>Potřebujeme počty kvůli jídlu a&nbsp;místům.
+        Za každou pozvánku stačí jeden formulář.</p>
+
+      <form class="formular" id="rsvp" method="post"
+            action="https://docs.google.com/forms/d/e/__ID_FORMULARE__/formResponse">
+
+        <label class="pole">
+          <span>Kdo se hlásí
+            <span class="napoveda">— jména všech, za koho vyplňujete</span></span>
+          <input type="text" name="entry.1000000001" required autocomplete="name">
+        </label>
+
+        <fieldset class="pole">
+          <span>Přijedete?</span>
+          <div class="volby">
+            <label class="volba">
+              <input type="radio" name="entry.1000000002" value="Ano" required checked data-ucast="ano">
+              <span>Přijedeme</span>
+            </label>
+            <label class="volba">
+              <input type="radio" name="entry.1000000002" value="Ne" data-ucast="ne">
+              <span>Bohužel nedorazíme</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <label class="pole jen-pri-ucasti">
+          <span>Kolik vás bude</span>
+          <input type="number" name="entry.1000000003" min="1" max="10" inputmode="numeric">
+        </label>
+
+        <label class="pole jen-pri-ucasti">
+          <span>Co nejíte
+            <span class="napoveda">— alergie, bezlepkové, vegetariánské…</span></span>
+          <input type="text" name="entry.1000000004">
+        </label>
+
+        <label class="pole">
+          <span>Chcete nám něco vzkázat?
+            <span class="napoveda">— nepovinné</span></span>
+          <textarea name="entry.1000000005" rows="3"></textarea>
+        </label>
+
+        <!-- Google tyhle dvě pole u odeslání očekává. -->
+        <input type="hidden" name="fvv" value="1">
+        <input type="hidden" name="pageHistory" value="0">
+
+        <button type="submit">Odeslat</button>
+        <p class="chyba" id="rsvp-chyba" hidden></p>
+      </form>
+
+      <div class="dekujeme" id="rsvp-dekujeme" hidden>
+        <h3>Děkujeme, máme to.</h3>
+        <p>Kdybyste potřebovali cokoli změnit, ozvěte se nám.</p>
       </div>
-      <aside class="card detail" id="okr-detail" aria-live="polite"><p class="muted">Vyber okrsek v mapě nebo v tabulce.</p></aside>
-    </div>
-    <figure class="card">
-      <figcaption>Všech 81 okrsků <a class="dl" href="../data/okrsky_praha5.csv" download>Stáhnout CSV</a> <a class="dl" href="../data/okrsky_demografie_sldb2021.csv" download>Demografie CSV</a></figcaption>
-      <div class="controls"><label>Čtvrť <select id="f-ctvrt"><option value="">všechny</option></select></label>
-        <label style="margin-left:12px">Najdi okrsek podle ulice <input id="f-ulice" type="search" placeholder="např. Lohniského" style="font:inherit;font-size:14px;padding:4px 8px;border-radius:6px;border:1px solid var(--axis);background:var(--surface);color:var(--ink)"></label>
-        <span id="f-ulice-out" class="small"></span></div>
-      <div class="tablewrap tall"><table class="data sortable" id="tb-okr"></table></div>
-    </figure>
-  </section>
 
-  <section id="ctvrti">
-    <h2>Čtvrti</h2>
-    <p class="note">Okrsky jsou seskupené do čtvrtí podle souboru „Informace o čtvrtích na Praze 5“ (okrsky 5046–5047 jsou Motol podle volební místnosti v Kudrnově ulici).</p>
-    <figure class="card">
-      <figcaption>Piráti do zastupitelstva MČ podle čtvrtí: 2022 → 2026</figcaption>
-      <div id="ch-ctvrti"></div>
-    </figure>
-    <div class="tablewrap"><table class="data" id="tb-ctvrti"></table></div>
-  </section>
-
-  <section id="skoly">
-    <h2>Školy: úspěšnost zápisů 2026</h2>
-    <div id="skoly-text" class="prose"></div>
-    <figure class="card">
-      <figcaption>Základní školy podle spádových obvodů – zápis do 1. tříd 2026/27 <a class="dl" href="../data/zapisy_zs_2026.csv" download>Stáhnout CSV</a></figcaption>
-      <div class="tablewrap"><table class="data sortable" id="tb-zs"></table></div>
-      <p class="small">Úspěšnost = přijaté žádosti ÷ rozhodnuté žádosti na škole. Jedno dítě mohlo podat víc žádostí, proto nepřijaté žádosti nejsou nepřijaté děti. „Děti ze spádové oblasti“ jsou údaj ze systému zápisů. Piráti 2026 = výsledek v okrscích, jejichž adresy spadají převážně do obvodu školy.</p>
-    </figure>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Mateřské školy – úspěšnost žádostí 2025 → 2026 <a class="dl" href="../data/zapisy_ms_2026.csv" download>Stáhnout CSV</a></figcaption>
-        <div id="ch-ms"></div>
-        <p class="small">Celá Praha 5 je pro školky jeden spádový obvod, takže rozhoduje hlavně kapacita konkrétní školky.</p>
-      </figure>
-      <figure class="card">
-        <figcaption>Okrsky: tlak na spádovou ZŠ (žádostí na místo) vs. Piráti 2026</figcaption>
-        <div id="ch-zs-pir"></div>
-      </figure>
+      <p class="jinak">Nefunguje vám formulář? Napište nám nebo zavolejte,
+        kontakt na nás máte.</p>
     </div>
   </section>
 
-  <section id="demografie">
-    <h2>Demografie ze sčítání 2021</h2>
-    <div id="demo-tiles" class="tiles"></div>
-    <div id="demo-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Okrsky Prahy 5: korelace demografie a výsledků</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-demo-kor"></table></div>
-        <p class="small">Pearsonovo r přes 80 okrsků (bez 5008). Tučně = významné po korekci FDR. Demografie je z 1km gridu sčítání, takže sousední okrsky mají podobné hodnoty a skutečná nezávislost je menší, než napovídá 80 okrsků.</p>
-      </figure>
-      <figure class="card">
-        <figcaption>Okrsky: podíl dětí 0–14 let vs. Piráti 2026 (oranžově Barrandov)</figcaption>
-        <div id="ch-demo-deti"></div>
-      </figure>
-    </div>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>57 pražských MČ: vysokoškoláci vs. Piráti na magistrát 2022 a 2026</figcaption>
-        <div id="ch-demo-vs"></div>
-        <div class="legend" id="lg-demo-vs"></div>
-      </figure>
-      <figure class="card">
-        <figcaption>MČ podle podílu vysokoškoláků (třetiny, vážené obyvateli)</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-demo-terc"></table></div>
-        <div class="tablewrap" style="margin-top:12px"><table class="data" id="tb-demo-mckor"></table></div>
-      </figure>
-    </div>
-  </section>
-
-  <section id="seniori">
-    <h2>Domovy pro seniory: jak se volilo v jejich okrscích</h2>
-    <div id="seniori-text" class="prose"></div>
-    <figure class="card">
-      <figcaption>Pobytová zařízení pro seniory (registr MPSV) a výsledky v jejich okrsku, v 6 sousedních okrscích a v celé Praze 5</figcaption>
-      <div class="tablewrap"><table class="data" id="tb-seniori"></table></div>
-      <p class="small">Zdroj: Registr poskytovatelů sociálních služeb MPSV (data.mpsv.cz), aktivní pobytové služby typu domov pro seniory, domov se zvláštním režimem a odlehčovací služba pro seniory. Kapacita v % = lůžka ÷ zapsaní voliči okrsku – horní odhad vlivu (ne všichni klienti mají trvalý pobyt v zařízení a ne všichni volí).</p>
-    </figure>
-  </section>
-
-  <section id="akce">
-    <h2>Kampaňové akce a výsledky</h2>
-    <div id="akce-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Akce po týdnech (veřejné akce v Praze 5, 2026)</figcaption>
-        <div id="ch-weeks"></div>
-        <div class="legend" id="lg-weeks"></div>
-      </figure>
-      <figure class="card">
-        <figcaption>Okrsky: počet akcí v kampani (září–říjen) do 700 m vs. změna Pirátů 2022 → 2026</figcaption>
-        <div id="ch-scatter-akce"></div>
-      </figure>
-    </div>
-    <figure class="card">
-      <figcaption>Okrsky podle intenzity akcí v okolí (do 700 m, září–říjen)</figcaption>
-      <div class="tablewrap"><table class="data" id="tb-skupiny"></table></div>
-    </figure>
-    <div id="akce-mag" class="prose"></div>
-    <figure class="card">
-      <figcaption>Okrsky, kde akce přímo byly: změna Pirátů v MČ a na magistrátu (stejní voliči, stejný den)</figcaption>
-      <div class="tablewrap"><table class="data sortable" id="tb-akce-okrsky"></table></div>
-      <p class="small">Místní efekt = změna v MČ − změna na magistrátu (p. b.). Kladná hodnota znamená, že pětková kandidátka ztratila méně než magistrátní; celopražský propad značky se tím odečte. Malé okrsky (pod 200 odevzdaných obálek) kolísají o několik bodů náhodně.</p>
-    </figure>
-    <div id="akce-mc" class="prose"></div>
-    <details class="card">
-      <summary>Seznam všech akcí z kalendáře</summary>
-      <div class="tablewrap tall"><table class="data sortable" id="tb-akce"></table></div>
-    </details>
-  </section>
-
-  <section id="konkurence">
-    <h2>Konkurence: SEN (Václav Láska) a Starostové</h2>
-    <div id="konk-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Okrsky: Piráti 2026 vs. SEN PRO PRAHU 5 2026</figcaption>
-        <div id="ch-sen"></div>
-      </figure>
-      <figure class="card">
-        <figcaption>Okrsky: změna Pirátů vs. změna SEN a STAN (2022 → 2026, p. b.)</figcaption>
-        <div id="ch-delta-konk"></div>
-        <div class="legend" id="lg-delta-konk"></div>
-      </figure>
-    </div>
-  </section>
-
-  <section id="psefologie">
-    <h2>Psefologie: volatilita, mandáty a přesuny voličů</h2>
-    <div id="pse-tiles" class="tiles"></div>
-    <div id="pse-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Kam odešli voliči Pirátů z roku 2022 (odhad ekologickou inferencí)</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-ei"></table></div>
-        <p class="small">Odhad z 80 okrsků (bez 5008), 90% interval z 200 bootstrapových vzorků. Model „se zapsanými voliči“ počítá i s nevoliči, varianta „jen voliči“ porovnává jen odevzdané hlasy. Ekologická inference odhaduje přesuny z rozdílů mezi okrsky – nejde o data o jednotlivých lidech.</p>
-      </figure>
-      <figure class="card">
-        <figcaption>Bloky stran v Praze 5: 2022 → 2026</figcaption>
-        <div id="ch-bloky"></div>
-        <p class="small">ODS, TOP 09 a KDU jsou sloučené, protože v roce 2022 kandidovaly v jiných koalicích. Podíly jsou z platných hlasů v okrscích, mohou se o desetiny lišit od oficiálních procent.</p>
-      </figure>
-    </div>
-    <figure class="card">
-      <figcaption>Přesuny voličů 2022 → 2026 (Sankey, odhad ekologickou inferencí)</figcaption>
-      <div class="controls" id="sk-ctrl" role="radiogroup" aria-label="Území">
-        <button role="radio" aria-checked="true" data-v="p5">Praha 5 – zastupitelstvo MČ</button>
-        <button role="radio" aria-checked="false" data-v="praha">Praha – magistrát</button>
-        <button role="radio" aria-checked="false" data-v="ps5">PS 2025 → MČ 2026 (Praha 5)</button>
-        <label style="margin-left:8px;font-size:14px"><input type="checkbox" id="sk-nev"> včetně lidí, kteří nevolili ani jednou</label>
-      </div>
-      <div id="ch-sankey"></div>
-      <p class="small" id="sk-note"></p>
-    </figure>
-  </section>
-
-  <section id="senat">
-    <h2>Senát 2026: obvod 21 – Praha 5</h2>
-    <div id="senat-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>1. kolo, obvod 21 (celý obvod)</figcaption>
-        <div id="ch-senat"></div>
-      </figure>
-      <figure class="card">
-        <figcaption>Ostatní pražské obvody 2026</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-senat-praha"></table></div>
-      </figure>
-    </div>
-    <h3 id="sen-vysledek">Jak dopadla předpověď 2. kola (16.–17. 10.)</h3>
-    <div id="senvys-tiles" class="tiles"></div>
-    <div id="senvys-text" class="prose"></div>
-    <figure class="card"><figcaption>Praha 5: předpověď, skutečný výsledek a rozdíl po okrscích (podíl Sáblíka mezi finalisty)</figcaption>
-      <div class="maps3" id="senvys-mapy"></div><div class="legend legend-col" id="lg-senvys"></div>
-      <p class="small">Okrsky Prahy 13 (40 % obvodu) v mapě nejsou – máme jen hranice okrsků Prahy 5; jsou v grafu a v tabulce níže. Mapy výsledku a rozdílu jsou i jako vrstvy v mapě okrsků nahoře.</p></figure>
-    <figure class="card"><figcaption>Kdo se mezi koly posunul kam (odhad z 139 okrsků obvodu 21)</figcaption><div id="ch-senvys-sankey"></div>
-        <p class="small">Tloušťka pruhu = odhadovaný počet voličů. Skrytý je jen tok „nevolil v 1. ani ve 2. kole“. Odhad ekologickou inferencí z rozdílů mezi okrsky (Goodmanova regrese s omezeními), ne data o jednotlivcích – malé toky berte jako „malé“, ne jako přesnou nulu.</p></figure>
-    <div class="grid2">
-      <figure class="card"><figcaption>Přesuny voličů: 2026 × typické druhé kolo</figcaption><div class="tablewrap"><table class="data" id="tb-senvys-presuny"></table></div>
-        <p class="small">90% interval z bootstrapu okrsků. „Typicky“ = medián odhadů z 231 druhých kol 2008–2024 (model přesunů, na kterém stála předpověď).</p></figure>
-      <figure class="card"><figcaption>Hodnocení předpovědi okrsků</figcaption><div class="tablewrap"><table class="data" id="tb-senvys"></table></div>
-        <p class="small">Naivní odhad = podíl Sáblíka mezi finalisty v 1. kole. Posun: záporné číslo = Sáblík dopadl lépe, než odhad čekal.</p></figure>
-    </div>
-    <figure class="card" style="max-width:640px"><figcaption>Předpověď × skutečnost po okrscích (podíl Sáblíka)</figcaption><div id="ch-senvys"></div><div class="legend"><span><span class="sw" style="background:var(--s1)"></span>Praha 5</span><span><span class="sw" style="background:var(--gray-mark)"></span>Praha 13</span></div></figure>
-
-    <h3 id="sen-pred">Předpověď 2. kola: Láska × Sáblík (zveřejněná před volbami)</h3>
-    <div id="senpred-tiles" class="tiles"></div>
-    <div id="senpred-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Model A: jak často vyhrál druhý z 1. kola podle náskoku vítěze (všechna druhá kola 2008–2024)</figcaption>
-        <div id="ch-senpred-a"></div>
-        <div class="legend" id="lg-senpred-a"></div>
-      </figure>
-      <figure class="card">
-        <figcaption>Model B: výsledek obvodu 21 se vzorci přesunů voličů z každého minulého druhého kola</figcaption>
-        <div id="ch-senpred-b"></div>
-        <div class="legend" id="lg-senpred-b"></div>
-      </figure>
-    </div>
-    <div id="senok-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card"><figcaption>Zpětný test metod pro okrsky (231 druhých kol 2008–2024)</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-senok-metody"></table></div>
-        <p class="small">CRPS = typická chyba předpovězeného rozdělení podílu v okrsku bez znalosti výsledku obvodu (nižší = lepší); pokrytí = jak často skutečnost padla do 80% intervalu. Bodové metody hodnoceny chybou při známém výsledku obvodu. Každé kolo předpovězeno bez sebe sama.</p></figure>
-      <figure class="card"><figcaption>Okrsky obvodu 21 (Praha 5 a Praha 13): předpověď 2. kola – podíl Sáblíka, 80% interval</figcaption>
-        <div class="tablewrap tall"><table class="data sortable" id="tb-senok"></table></div></figure>
-    </div>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Okrsky: korelace podílu senátních kandidátů s výsledky Pirátů</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-sen-kor"></table></div>
-        <p class="small">Pearsonovo r přes 81 okrsků Prahy 5. Kladné = kandidát je silnější tam, kde jsou silnější Piráti.</p>
-      </figure>
-      <figure class="card">
-        <figcaption>Koho volili v Senátu voliči Pirátů (odhad) a odkud měl hlasy Šarapatka</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-sen-deleni"></table></div>
-        <div class="tablewrap" style="margin-top:12px"><table class="data" id="tb-sar-odkud"></table></div>
-        <p class="small" id="sen-deleni-note"></p>
-      </figure>
-    </div>
-  </section>
-
-  <section id="kandidati">
-    <h2>Kandidáti a preferenční hlasy</h2>
-    <div id="kand-text" class="prose"></div>
-    <figure class="card">
-      <figcaption>Pirátská kandidátka do zastupitelstva Prahy 5, 2026</figcaption>
-      <div class="tablewrap tall"><table class="data sortable" id="tb-kand"></table></div>
-      <p class="small">Index čtvrti = podíl hlasů kandidáta na hlasech listiny v dané čtvrti ÷ jeho podíl v celé Praze 5 × 100. Hodnota 100 = stejně jako jinde; nad 110 = v čtvrti výrazně silnější.</p>
-    </figure>
-    <div class="grid2">
-      <figure class="card">
-        <figcaption>Debaty „Na rovinu“: preference hosta (magistrátní kandidátka) v čtvrti debaty</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-debaty"></table></div>
-      </figure>
-      <figure class="card">
-        <figcaption>Magistrátní kandidátka Pirátů – prvních 15, hlasy v Praze 5</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-magk"></table></div>
-      </figure>
-    </div>
-  </section>
-
-  <section id="kontrola">
-    <h2>Kontrola dat a přepočet mandátů</h2>
-    <div id="kon-tiles" class="tiles"></div>
-    <div id="kon-text" class="prose"></div>
-    <figure class="card"><figcaption>Nálezy v okrscích Prahy 5 (KV 2026, MČ i magistrát)</figcaption>
-      <div class="tablewrap tall"><table class="data" id="tb-kon-nalezy"></table></div>
-      <p class="small">Jistota: ●●● vysoká, ●● střední, ● informativní. Statistický nález není důkaz úmyslu; závazné jsou jen výsledky vyhlášené volebními orgány.</p></figure>
-    <div class="grid2">
-      <figure class="card"><figcaption>Pirátské kandidátky ve všech MČ: kolik hlasů chybělo na další mandát a jaká byla rezerva</figcaption>
-        <div class="tablewrap tall"><table class="data sortable" id="tb-kon-marze"></table></div>
-        <p class="small">„Plní voliči“ = hlasy ÷ počet mandátů (volič, který dá kandidátce všechny hlasy). Ostatní strany beze změny.</p></figure>
-      <figure class="card"><figcaption>Benfordův test 2. číslice (hlasy stran v okrscích Prahy 5)</figcaption>
-        <div class="tablewrap"><table class="data" id="tb-kon-benford"></table></div>
-        <p class="small" id="kon-benford-note"></p></figure>
-    </div>
-  </section>
-
-  <section id="hledani">
-    <h2>Kde hledat hlasy na 4. mandát</h2>
-    <div id="hl-tiles" class="tiles"></div>
-    <div id="hl-text" class="prose"></div>
-    <figure class="card"><figcaption>Okrsky Prahy 5 seřazené podle šance najít chybu při sčítání <a class="dl" href="../data/okrsky_praha5.csv" download>Stáhnout CSV</a></figcaption>
-      <div class="tablewrap tall"><table class="data sortable" id="tb-hledani"></table></div>
-      <p class="small">Očekáváno = podíl Pirátů na magistrátu ve stejném okrsku × typický poměr MČ/magistrát v Praze 5 × platné hlasy v MČ. Skóre = chybějící pirátské hlasy + 20 × neplatné lístky nad průměr + 150 za každý nález kontroly dat + 150 za pozdní zpracování. Okrsek 5008 (adresa úřadu) je kvůli odlišnému složení voličů jen orientační.</p></figure>
-  </section>
-
-  <section id="doplneni">
-    <h2>Doplňující analýzy</h2>
-    <p class="note">Body z „Co v analýze chybí“, které šlo udělat z veřejných dat. Rychlé odkazy: <a href="#d-vek">věk a pohlaví 2026</a> · <a href="#d-split">MČ × magistrát</a> · <a href="#d-pref">preference na magistrát</a> · <a href="#d-ucast">účast</a> · <a href="#d-doma">kdo zůstal doma</a> · <a href="#d-vystavba">nová výstavba</a> · <a href="#d-mc">srovnání MČ</a> · <a href="#d-mandaty">Monte Carlo mandátů</a> · <a href="#d-ei">varianty odhadu přesunů</a>. Přesuny ze sněmovních voleb 2025 jsou v <a href="#psefologie">Sankey diagramu</a>.</p>
-
-    <h3 id="d-vek">Věk a pohlaví v roce 2026</h3>
-    <div id="d-vek-text" class="prose"></div>
-    <figure class="card"><figcaption>Pražské MČ: složení obyvatel k 1. 1. 2026 a Piráti na magistrát</figcaption>
-      <div class="tablewrap tall"><table class="data sortable" id="tb-d-vek"></table></div></figure>
-
-    <h3 id="d-split">Stejní voliči, dvě hlasování: MČ × magistrát</h3>
-    <div id="d-split-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card"><figcaption>Voliči pirátské magistrátní kandidátky → volba v MČ (odhad)</figcaption><div class="tablewrap"><table class="data" id="tb-d-split"></table></div></figure>
-      <figure class="card"><figcaption>Pirátská kandidátka v MČ jako % výsledku na magistrát, podle čtvrtí: 2022 → 2026</figcaption><div id="ch-d-split"></div></figure>
-    </div>
-
-    <h3 id="d-pref">Preferenční hlasy pirátské magistrátní kandidátky v Praze 5</h3>
-    <figure class="card"><figcaption>Index čtvrti (100 = průměr Prahy 5), prvních 15 kandidátů</figcaption>
-      <div class="tablewrap"><table class="data sortable" id="tb-d-pref"></table></div></figure>
-
-    <h3 id="d-ucast">Účast: kdo získal nové voliče</h3>
-    <div id="d-ucast-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card"><figcaption>Nevoliči 2022, kteří v roce 2026 přišli (odhad)</figcaption><div class="tablewrap"><table class="data" id="tb-d-nevol"></table></div></figure>
-      <figure class="card"><figcaption>Okrsky: změna účasti × změna stran 2022 → 2026 (r)</figcaption><div class="tablewrap"><table class="data" id="tb-d-ucastkor"></table></div></figure>
-    </div>
-
-    <h3 id="d-doma">Kdo zůstal doma: sněmovní volby 2025 → komunální 2026</h3>
-    <div id="d-doma-text" class="prose"></div>
-    <figure class="card"><figcaption>Podíl voličů strany ze sněmovních voleb 2025, kteří v komunálních volbách 2026 nevolili (odhad, 90% interval)</figcaption>
-      <div id="ch-d-doma"></div>
-      <div class="legend" id="lg-d-doma"></div></figure>
-
-    <h3 id="d-vystavba">Nová výstavba</h3>
-    <div id="d-vystavba-text" class="prose"></div>
-    <figure class="card"><figcaption>10 okrsků Prahy 5 s největším přírůstkem voličů 2022 → 2026</figcaption>
-      <div class="tablewrap"><table class="data" id="tb-d-vystavba"></table></div></figure>
-
-    <h3 id="d-mc">Je Praha 5 výjimka? Srovnání s ostatními MČ</h3>
-    <div id="d-mc-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card"><figcaption>Srovnatelné MČ (Piráti sami nebo s nezávislými 2022 i 2026): relativní změna MČ × magistrát</figcaption><div id="ch-d-mc"></div></figure>
-      <figure class="card"><figcaption>MČ s pirátskou kandidátkou v obou volbách (srovnatelné nahoře)</figcaption><div class="tablewrap tall"><table class="data" id="tb-d-mc"></table></div><p class="small">Očekávaná změna v MČ = jak by se pirátská kandidátka v MČ propadla podle toho, jak se Piráti propadli na magistrátu ve stejné MČ (přímka přes 11 srovnatelných MČ, vážená počtem voličů: očekávaná změna = 45,5 + 1,68 × změna na magistrátu). Kladné číslo = místní kandidátka dopadla lépe, než odpovídá propadu pražské značky v té MČ; odchylky do ±8 bodů (1 směrodatná odchylka) jsou běžné. U koalic se počítá blok Pirátů a partnerů v obou volbách i na magistrátu; při změně složení koalice srovnání není férové (šedě).</p></figure>
-    </div>
-
-    <h3 id="d-mandaty">Monte Carlo mandátů</h3>
-    <div id="d-mandaty-text" class="prose"></div>
-    <figure class="card"><figcaption>Pravděpodobnost počtu mandátů Pirátů a SEN v simulacích (2 000 běhů)</figcaption>
-      <div class="tablewrap"><table class="data" id="tb-d-mc-sim"></table></div></figure>
-
-    <h3 id="d-ei">Varianty odhadu přesunů: Goodman × IPF po okrscích</h3>
-    <div id="d-ei-text" class="prose"></div>
-    <figure class="card"><figcaption>Kam odešli voliči Pirátů z roku 2022: dvě metody</figcaption>
-      <div class="tablewrap"><table class="data" id="tb-d-ei"></table></div></figure>
-  </section>
-
-  <section id="kuriozity">
-    <h2>Kuriozity: data správně, závěry na vlastní nebezpečí</h2>
-    <div id="kur-text" class="prose"></div>
-    <div class="grid2">
-      <figure class="card"><figcaption>1. Programátor, nebo důchodce? Povolání kandidátů do MČ v celé Praze (KV 2026)</figcaption><div id="ch-kur-povolani"></div><div class="legend" id="lg-kur-povolani"></div><p class="small" id="kur-povolani-note"></p></figure>
-      <figure class="card"><figcaption>2. Volte v sudém okrsku! Piráti v sudých a lichých okrscích Prahy 5</figcaption><div id="ch-kur-parita"></div><p class="small" id="kur-parita-note"></p></figure>
-      <figure class="card"><figcaption>3. Kde se volí, tam se volí: Piráti podle typu volební místnosti (Praha 5)</figcaption><div id="ch-kur-mistnost"></div><p class="small" id="kur-mistnost-note"></p></figure>
-      <figure class="card"><figcaption>4. Pirátské okrsky jsou sečtené dřív: čas sečtení × výsledek Pirátů (Praha 5)</figcaption><div id="ch-kur-cas"></div><p class="small" id="kur-cas-note"></p></figure>
-      <figure class="card"><figcaption>5. Titul před jménem: preferenční hlasy kandidátů do MČ v celé Praze (100 = průměr vlastní kandidátky)</figcaption><div id="ch-kur-titul"></div><p class="small" id="kur-titul-note"></p></figure>
-    </div>
-  </section>
-
-  <section id="dalsi" class="prose">
-    <div data-md="dalsi-pohledy.md"></div>
-  </section>
-
-  <section id="metodika" class="prose">
-    <h2>Metodika a zdroje</h2>
-    <div id="metodika-md" data-md="metodika.md"></div>
-  </section>
 </main>
 
-<footer class="wrap small" style="padding:24px 16px 40px;color:var(--ink-2)">
-  Analýza vznikla s pomocí AI (Claude) z otevřených dat ČSÚ a dalších veřejných zdrojů. Může obsahovat chyby – závazné jsou pouze výsledky vyhlášené volebními orgány.
-  Zdrojový kód, data a zjištění: <a href="https://github.com/DanKaliba/ShinySpace">github.com/DanKaliba/ShinySpace</a>.
+<footer class="paticka">
+  <p class="jmena">Kristýna a&nbsp;Zdeněk</p>
+  <p>14.&nbsp;srpna 2027 &nbsp;·&nbsp; Okříšky</p>
 </footer>
-<div id="tip" class="tip" role="tooltip" hidden></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="app.js?v=20261019a"></script>
+
+<script src="assets/main.js"></script>
+<script src="assets/kvety.js" defer></script>
+<script src="assets/rsvp.js" defer></script>
 </body>
 </html>

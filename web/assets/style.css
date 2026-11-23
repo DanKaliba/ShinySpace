@@ -244,13 +244,24 @@ h1 { margin: 0; font-weight: 400; }
   color: var(--list);
 }
 
+.karty {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+  margin-top: 1.4rem;
+}
 .karta {
-  display: inline-block;
-  min-width: min(100%, 22rem);
-  padding: 1.6rem 2rem;
+  padding: 1.6rem 1.5rem;
   background: var(--papir-tmavsi);
   border-radius: .6rem;
   border: 1px solid var(--cara);
+}
+.karta-stitek {
+  margin: 0 0 .2rem;
+  font-family: var(--pismo-jmena);
+  font-size: 2.4rem;
+  line-height: 1.2;
+  color: var(--les);
 }
 .misto-nazev { margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--les); }
 .adresa { margin: .3rem 0 1rem; font-style: normal; color: var(--text-tlumeny); }
